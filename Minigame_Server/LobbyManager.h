@@ -5,6 +5,7 @@
 #include "Slngleton.h"
 #include "global.h"
 #include <array>
+#include <unordered_map>
 #include <thread>
 #include <concurrent_queue.h>
 
@@ -25,7 +26,7 @@ public:
 
 	Session* GetSession(int id);
 
-	std::array <Session, MAX_USER> m_users;
+	std::unordered_map < int, Session > m_users;
 private:
 	HANDLE m_handle;
 

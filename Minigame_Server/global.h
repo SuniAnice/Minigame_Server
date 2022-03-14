@@ -40,6 +40,7 @@ struct Session {
 	USER_STATE state = USER_STATE::STATE_READY;
 	int key;
 	int prevSize;
+	std::wstring nickname;
 };
 
 namespace LOBBY
@@ -54,6 +55,28 @@ namespace LOBBY
 
 		USER_STARTMATCHING,
 		USER_STOPMATCHING,
+	};
+
+	struct LoginTask
+	{
+		int id;
+		std::wstring nickname;
+	};
+
+	struct ChatTask
+	{
+		int id;
+		std::wstring message;
+	};
+
+	struct StartMatchingTask
+	{
+		int id;
+	};
+
+	struct StopMatchingTask
+	{
+		int id;
 	};
 }
 
@@ -140,6 +163,18 @@ namespace PACKET
 			unsigned char size = sizeof( LobbyChatPacket );
 			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::LOBBYCHAT;
 			wchar_t message[ 50 ];
+		};
+
+		struct StartMatchingPacket
+		{
+			unsigned char size = sizeof( StartMatchingPacket );
+			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::STARTMATCHING;
+		};
+
+		struct StopMatchingPacket
+		{
+			unsigned char size = sizeof( StopMatchingPacket );
+			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::STOPMATCHING;
 		};
 	}
 }

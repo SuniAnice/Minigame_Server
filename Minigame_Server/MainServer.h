@@ -22,7 +22,7 @@ public:
 
 	void DoRecv( Session* session );
 
-	void ProcessPacket( int id, unsigned char* packet );
+	void ProcessPacket( int id, OVERLAPPED_EXTENDED* over );
 
 private:
 	void Init();
