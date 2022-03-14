@@ -22,6 +22,8 @@ public:
 
 	void DoRecv( Session* session );
 
+	void ProcessPacket( int id, unsigned char* packet );
+
 private:
 	void Init();
 private:

@@ -147,6 +147,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainServer.cpp" />
     <ClCompile Include="LobbyManager.cpp" />
+    <ClCompile Include="MatchMaker.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AutoCall.hpp" />
@@ -154,6 +155,7 @@
     <ClInclude Include="MainServer.h" />
     <ClInclude Include="LobbyManager.h" />
     <ClInclude Include="global.h" />
+    <ClInclude Include="MatchMaker.h" />
     <ClInclude Include="Slngleton.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

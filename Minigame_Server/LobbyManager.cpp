@@ -45,6 +45,14 @@ void LobbyManager::ThreadFunc()
 			MainServer::GetInstance().DoRecv( &m_users[ id ] );
 		}
 		break;
+		case LOBBY::TASK_TYPE::USER_LOGOUT:
+		{
+			int* id = reinterpret_cast<int*>( task.second );
+			m_users[ *id ].state = USER_STATE::STATE_READY;
+			closesocket( m_users[ *id ].socket );
+			std::cout << *id << "번 플레이어 로그아웃" << std::endl;
+		}
+		break;
 		}
 	}
 }

@@ -17,6 +17,7 @@
     <ClCompile Include="LogUtil.cpp">
       <Filter>Utility</Filter>
     </ClCompile>
+    <ClCompile Include="MatchMaker.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MainServer.h" />
@@ -33,5 +34,6 @@
     <ClInclude Include="LogUtil.h">
       <Filter>Utility</Filter>
     </ClInclude>
+    <ClInclude Include="MatchMaker.h" />
   </ItemGroup>
 </Project>

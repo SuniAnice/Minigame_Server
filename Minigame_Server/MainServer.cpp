@@ -98,23 +98,50 @@ void MainServer::WorkerFunc()
 		BOOL ret = GetQueuedCompletionStatus( hIOCP, &bytes_recved, &ikey, &over, INFINITE );
 		int key = static_cast<int>( ikey );
 
+		OVERLAPPED_EXTENDED* overEx = reinterpret_cast<OVERLAPPED_EXTENDED*>( over );
+
 		if ( FALSE == ret ) {
 			if ( 0 == key ) {
 				exit( -1 );
 			}
-			else {
+			else
+			{
 				std::cout << "GQCS" << std::endl;
 				// 로그아웃 처리
+				LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_LOGOUT, &key );
+				continue;
 			}
 		}
-		OVERLAPPED_EXTENDED* overEx =  reinterpret_cast<OVERLAPPED_EXTENDED*>( over );
+		if ( key != 0 && bytes_recved == 0 )
+		{
+			// 로그아웃 처리
+			LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_LOGOUT, &key );
+			continue;
+		}
+
 		switch ( overEx->opType )
 		{
 		case OP_TYPE::OP_RECV:
 		{
-			auto s = LobbyManager::GetInstance().GetSession( key );
-			SendPacket( s->socket, s->overlapped.packetBuffer );
-			DoRecv( s );
+			Session* session = LobbyManager::GetInstance().GetSession( key );
+
+			unsigned char* packet_ptr = overEx->packetBuffer;
+			int data_bytes = bytes_recved + session->prevSize;
+			int packet_size = packet_ptr[ 0 ];
+
+			while ( data_bytes >= packet_size )
+			{
+				ProcessPacket( key, packet_ptr );
+				data_bytes -= packet_size;
+				packet_ptr += packet_size;
+				if ( 0 >= data_bytes )	break;
+				packet_size = packet_ptr[ 0 ];
+			}
+			session->prevSize = data_bytes;
+			if ( data_bytes > 0 )
+				memcpy( overEx->packetBuffer, packet_ptr, data_bytes );
+
+			DoRecv( session );
 		}
 			break;
 		case OP_TYPE::OP_SEND:
@@ -127,11 +154,11 @@ void MainServer::WorkerFunc()
 			LobbyManager::GetInstance().PushTask(LOBBY::TASK_TYPE::USER_ACCEPT, overEx );
 
 			OVERLAPPED_EXTENDED* new_over = new OVERLAPPED_EXTENDED;
-			SOCKET clientSock = WSASocket( AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED );
-			new_over->socket = clientSock;
+			SOCKET cSock = WSASocket( AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED );
+			new_over->socket = cSock;
 			new_over->opType = OP_TYPE::OP_ACCEPT;
 			memset( &new_over->overlapped, 0, sizeof( new_over->overlapped ) );
-			AcceptEx( listenSocket, clientSock, new_over->packetBuffer, 0, 32, 32, NULL, &new_over->overlapped );
+			AcceptEx( listenSocket, cSock, new_over->packetBuffer, 0, 32, 32, NULL, &new_over->overlapped );
 			
 		}
 			break;
@@ -159,11 +186,18 @@ void MainServer::SendPacket( SOCKET target, void* p )
 
 void MainServer::DoRecv( Session* session )
 {
+	memset( &session->overlapped, 0, sizeof( session->overlapped ) );
 	session->overlapped.wsaBuf.buf = reinterpret_cast<char*>( session->overlapped.packetBuffer ) + session->prevSize;
 	session->overlapped.wsaBuf.len = BUFFER_SIZE - session->prevSize;
-	memset( &session->overlapped, 0, sizeof( session->overlapped ) );
 
 	DWORD r_flag = 0;
-	int ret = WSARecv( session->socket, &session->overlapped.wsaBuf, 1, NULL,
-		&r_flag, &session->overlapped.overlapped, NULL );
+	int ret = WSARecv( session->socket, &session->overlapped.wsaBuf, 1, NULL, &r_flag, &session->overlapped.overlapped, NULL );
+}
+
+void MainServer::ProcessPacket( int id, unsigned char* packet )
+{
+	switch ( packet[ 1 ] )
+	{
+
+	}
 }
