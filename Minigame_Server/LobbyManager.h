@@ -35,5 +35,7 @@ private:
 	int GetNewId(SOCKET socket);
 
 	concurrency::concurrent_queue< std::pair < LOBBY::TASK_TYPE, void* > > m_tasks;
+
+	void BroadCastLobby( void* packet );
 };
 
