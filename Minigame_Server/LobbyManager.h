@@ -20,14 +20,14 @@ public:
 
 	void PushTask( LOBBY::TASK_TYPE type, void* info );
 
-	void ThreadFunc();
-
 	void SetHandle( HANDLE handle );
 
 	Session* GetSession(int id);
-
-	std::unordered_map < int, Session > m_users;
 private:
+	std::unordered_map < int, Session > m_users;
+
+	void ThreadFunc();
+
 	HANDLE m_handle;
 
 	std::thread m_Thread;

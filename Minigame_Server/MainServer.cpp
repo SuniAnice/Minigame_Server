@@ -131,7 +131,7 @@ void MainServer::WorkerFunc()
 
 			while ( data_bytes >= packet_size )
 			{
-				ProcessPacket( key, overEx );
+				ProcessPacket( key, packet_ptr );
 				data_bytes -= packet_size;
 				packet_ptr += packet_size;
 				if ( 0 >= data_bytes )	break;
@@ -172,7 +172,7 @@ void MainServer::WorkerFunc()
 	}
 }
 
-void MainServer::SendPacket( SOCKET target, void* p )
+void MainServer::SendPacket( SOCKET& target, void* p )
 {
 	//int p_size = reinterpret_cast<unsigned char*>( p )[ 0 ];
 	OVERLAPPED_EXTENDED* overlapped = new OVERLAPPED_EXTENDED;
@@ -195,39 +195,39 @@ void MainServer::DoRecv( Session* session )
 	int ret = WSARecv( session->socket, &session->overlapped.wsaBuf, 1, NULL, &r_flag, &session->overlapped.overlapped, NULL );
 }
 
-void MainServer::ProcessPacket( int id, OVERLAPPED_EXTENDED* over )
+void MainServer::ProcessPacket( int id, unsigned char* buffer )
 {
-	PACKETINFO::CLIENT_TO_SERVER type = static_cast< PACKETINFO::CLIENT_TO_SERVER >( over->packetBuffer[ 1 ] );
+	PACKETINFO::CLIENT_TO_SERVER type = static_cast< PACKETINFO::CLIENT_TO_SERVER >( buffer[ 1 ] );
 	switch ( type )
 	{
 	case PACKETINFO::CLIENT_TO_SERVER::LOGIN:
 	{
-		PACKET::CLIENT_TO_SERVER::LoginPacket* p = reinterpret_cast<PACKET::CLIENT_TO_SERVER::LoginPacket*>( over->packetBuffer );
+		PACKET::CLIENT_TO_SERVER::LoginPacket* p = reinterpret_cast<PACKET::CLIENT_TO_SERVER::LoginPacket*>( buffer );
 		LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_LOGIN, new LOBBY::LoginTask{ id, p->nickname } );
 	}
 	break;
 	case PACKETINFO::CLIENT_TO_SERVER::LOBBYCHAT:
 	{
-		PACKET::CLIENT_TO_SERVER::LobbyChatPacket* p = reinterpret_cast<PACKET::CLIENT_TO_SERVER::LobbyChatPacket*>( over->packetBuffer );
+		PACKET::CLIENT_TO_SERVER::LobbyChatPacket* p = reinterpret_cast<PACKET::CLIENT_TO_SERVER::LobbyChatPacket*>( buffer );
 		LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::LOBBY_CHAT, new LOBBY::ChatTask{ id, p->message } );
 	}
 	break;
 	case PACKETINFO::CLIENT_TO_SERVER::STARTMATCHING:
 	{
-		PACKET::CLIENT_TO_SERVER::StartMatchingPacket* p = reinterpret_cast<PACKET::CLIENT_TO_SERVER::StartMatchingPacket*>( over->packetBuffer );
+		PACKET::CLIENT_TO_SERVER::StartMatchingPacket* p = reinterpret_cast<PACKET::CLIENT_TO_SERVER::StartMatchingPacket*>( buffer );
 		LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_STARTMATCHING, new LOBBY::StartMatchingTask{ id } );
 	}
 	break;
 	case PACKETINFO::CLIENT_TO_SERVER::STOPMATCHING:
 	{
-		PACKET::CLIENT_TO_SERVER::StopMatchingPacket* p = reinterpret_cast<PACKET::CLIENT_TO_SERVER::StopMatchingPacket*>( over->packetBuffer );
+		PACKET::CLIENT_TO_SERVER::StopMatchingPacket* p = reinterpret_cast<PACKET::CLIENT_TO_SERVER::StopMatchingPacket*>( buffer );
 		LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_STOPMATCHING, new LOBBY::StopMatchingTask{ id } );
 	}
 	break;
 
 	default:
 	{
-		std::cout << "알 수 없는 패킷 타입입니다 : " << over->packetBuffer[ 1 ] << std::endl;
+		std::cout << "알 수 없는 패킷 타입입니다 : " << buffer[ 1 ] << std::endl;
 	}
 		break;
 	}

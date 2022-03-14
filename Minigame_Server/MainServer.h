@@ -16,14 +16,9 @@ public:
 
 	void Run();
 
-	void WorkerFunc();
-
-	void SendPacket( SOCKET target, void* p );
-
 	void DoRecv( Session* session );
 
-	void ProcessPacket( int id, OVERLAPPED_EXTENDED* over );
-
+	void SendPacket( SOCKET& target, void* p );
 private:
 	void Init();
 private:
@@ -33,4 +28,8 @@ private:
 	HANDLE hIOCP;
 
 	std::vector< std::thread > workerThreads;
+
+	void ProcessPacket( int id, unsigned char* over );
+
+	void WorkerFunc();
 };
