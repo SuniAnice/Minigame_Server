@@ -14,9 +14,9 @@ public:
 	LobbyManager();
 	virtual ~LobbyManager();
 
-	void SetHandle( HANDLE handle );
+	void SetHandle( const HANDLE& handle );
 
-	Session* GetSession( int id );
+	Session* GetSession( const int id );
 private:
 	std::unordered_map < int, Session* > m_users;
 
@@ -24,10 +24,10 @@ private:
 
 	HANDLE m_handle;
 
-	int GetNewId(SOCKET socket);
+	int GetNewId(const SOCKET& socket);
 
 	void BroadCastLobby( void* packet );
 
-	bool FindUserName( std::wstring nickname );
+	bool FindUserName( const std::wstring& nickname );
 };
 

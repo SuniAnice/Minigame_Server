@@ -242,4 +242,4 @@ namespace PACKET
 		};
 	}
 }
-#pragma pack()
+#pragma pack(pop)

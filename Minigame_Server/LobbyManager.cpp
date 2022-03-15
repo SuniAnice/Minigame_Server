@@ -109,23 +109,23 @@ void LobbyManager::ThreadFunc()
 	}
 }
 
-void LobbyManager::SetHandle( HANDLE handle )
+void LobbyManager::SetHandle( const HANDLE& handle )
 {
 	m_handle = handle;
 }
 
-Session* LobbyManager::GetSession( int id )
+Session* LobbyManager::GetSession( const int id )
 {
 	return m_users[id];
 }
 
-int LobbyManager::GetNewId( SOCKET socket )
+int LobbyManager::GetNewId( const SOCKET& socket )
 {
 	for ( int i = 1; i < MAX_USER; ++i )
 	{
 		if ( !m_users.count( i ) )
 		{
-			m_users[ i ] = new Session;
+			m_users[ i ] = new Session();
 			m_users[ i ]->key = i;
 			m_users[ i ]->socket = socket;
 			return i;
@@ -145,7 +145,7 @@ void LobbyManager::BroadCastLobby( void* packet )
 	}
 }
 
-bool LobbyManager::FindUserName( std::wstring nickname )
+bool LobbyManager::FindUserName( const std::wstring& nickname )
 {
 	for ( auto& pl : m_users )
 	{
