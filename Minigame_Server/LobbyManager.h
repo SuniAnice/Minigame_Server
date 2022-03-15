@@ -29,5 +29,7 @@ private:
 	int GetNewId(SOCKET socket);
 
 	void BroadCastLobby( void* packet );
+
+	bool FindUserName( std::wstring nickname );
 };
 

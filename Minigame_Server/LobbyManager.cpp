@@ -41,7 +41,7 @@ void LobbyManager::ThreadFunc()
 			LOBBY::LoginTask* t = reinterpret_cast< LOBBY::LoginTask* >( task.second );
 			if ( t != nullptr )
 			{
-				if ( m_users.count( t->id ) == 0 )
+				if ( FindUserName( t->nickname ) )
 				{
 					PACKET::SERVER_TO_CLIENT::LoginOkPacket okPacket;
 					MainServer::GetInstance().SendPacket( m_users[ t->id ]->socket, &okPacket );
@@ -144,4 +144,14 @@ void LobbyManager::BroadCastLobby( void* packet )
 			MainServer::GetInstance().SendPacket( player.second->socket, &packet );
 		}
 	}
+}
+
+bool LobbyManager::FindUserName( std::wstring nickname )
+{
+	for ( auto& pl : m_users )
+	{
+		if ( pl.second->nickname == nickname )
+			return true;
+	}
+	return false;
 }
