@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <vector>
+#include <unordered_map>
 
 
 #pragma comment(lib, "ws2_32.lib")
@@ -14,6 +15,9 @@
 
 constexpr int PORT = 4000;
 constexpr int BUFFER_SIZE = 1024;
+constexpr int MAX_PLAYER_IN_ROOM = 4;
+constexpr size_t MAX_USER = 100000;
+
 
 enum class OP_TYPE
 {
@@ -50,11 +54,20 @@ struct Session {
 	std::wstring nickname;
 };
 
+// 인게임 유저 정보
+struct UserInfo
+{
+	int userNum;
+	wchar_t nickname[ 10 ] = {};
+};
+
 struct GameRoom
 {
-	std::vector< Session* > users;
+	std::vector< Session* > userSessions;
 	GAME_STATE state = GAME_STATE::WAIT_FOR_PLAYERS;
+	std::unordered_map <int, UserInfo> userInfo;
 };
+
 
 namespace LOBBY
 {
@@ -124,7 +137,7 @@ namespace PACKETINFO
 		ADDPLAYER,
 		REMOVEPLAYER,
 		LOBBYCHAT,
-
+		GAMEMATCHED,
 	};
 
 	enum class CLIENT_TO_SERVER : unsigned char
@@ -145,6 +158,7 @@ namespace PACKET
 		{
 			unsigned char size = sizeof( LoginOkPacket );
 			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::LOGINOK;
+			int index;
 		};
 
 		struct LoginFailPacket
@@ -173,6 +187,13 @@ namespace PACKET
 			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::LOBBYCHAT;
 			wchar_t nickname[ 10 ] = {};
 			wchar_t message[ 50 ] = {};
+		};
+
+		struct GameMatchedPacket
+		{
+			unsigned char size = sizeof( GameMatchedPacket );
+			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::GAMEMATCHED;
+			UserInfo users[ MAX_PLAYER_IN_ROOM ];
 		};
 	}
 

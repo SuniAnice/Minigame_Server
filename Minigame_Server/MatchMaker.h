@@ -6,8 +6,6 @@
 #include <list>
 
 
-constexpr int MAX_PLAYER_IN_ROOM = 4;
-
 class MatchMaker : public Base::TSingleton < MatchMaker >,
 	public BaseManager < MATCH::TASK_TYPE >
 {

@@ -44,6 +44,7 @@ void LobbyManager::ThreadFunc()
 				if ( !FindUserName( t->nickname ) )
 				{
 					PACKET::SERVER_TO_CLIENT::LoginOkPacket okPacket;
+					okPacket.index = t->id;
 					MainServer::GetInstance().SendPacket( m_users[ t->id ]->socket, &okPacket );
 					for ( auto& pl : m_users )
 					{

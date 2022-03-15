@@ -1,6 +1,7 @@
 
 
 #include "GameManager.h"
+#include "MainServer.h"
 
 
 GameManager::GameManager()
@@ -28,6 +29,17 @@ void GameManager::ThreadFunc()
 			INGAME::CreateRoomTask* t = reinterpret_cast< INGAME::CreateRoomTask* >( task.second );
 			if ( t != nullptr )
 			{
+				m_rooms.emplace_back( t->room );
+				PACKET::SERVER_TO_CLIENT::GameMatchedPacket packet;
+				for ( int i = 0; i < MAX_PLAYER_IN_ROOM; i++ )
+				{
+					packet.users[ i ].userNum = t->room->userSessions[ i ]->key;
+					wmemcpy( packet.users[ i ].nickname, t->room->userSessions[ i ]->nickname.c_str(), t->room->userSessions[ i ]->nickname.size() );
+				}
+				for ( auto& pl : t->room->userSessions )
+				{
+					MainServer::GetInstance().SendPacket( pl->socket, &packet );
+				}
 				delete task.second;
 			}
 		}

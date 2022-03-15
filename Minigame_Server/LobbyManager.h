@@ -7,8 +7,6 @@
 #include <unordered_map>
 
 
-constexpr size_t MAX_USER = 100000;
-
 class LobbyManager : public Base::TSingleton < LobbyManager >,
 	public BaseManager < LOBBY::TASK_TYPE >
 {

@@ -33,7 +33,9 @@ void MatchMaker::ThreadFunc()
 					GameRoom* room = new GameRoom;
 					for ( int i = 0; i < MAX_PLAYER_IN_ROOM; i++ )
 					{
-						room->users.push_back( m_matchingUser.front() );
+						room->userSessions.push_back( m_matchingUser.front() );
+						room->userInfo[ i ].userNum = m_matchingUser.front()->key;
+						wmemcpy( room->userInfo[ i ].nickname, m_matchingUser.front()->nickname.c_str(), m_matchingUser.front()->nickname.size() );
 						m_matchingUser.pop_front();
 					}
 					GameManager::GetInstance().PushTask( INGAME::TASK_TYPE::ROOM_CREATE, new INGAME::CreateRoomTask{ room } );
