@@ -1,6 +1,8 @@
 
 
+#include "GameManager.h"
 #include "MainServer.h"
+#include "MatchMaker.h"
 #include "LobbyManager.h"
 #include "LogUtil.h"
 #include <iostream>
@@ -67,6 +69,8 @@ void MainServer::Init()
 	std::cout << "MainServer : 스레드 생성 완료" << std::endl;
 
 	LobbyManager::GetInstance();
+	MatchMaker::GetInstance();
+	GameManager::GetInstance();
 }
 
 void MainServer::Run()
@@ -216,13 +220,13 @@ void MainServer::ProcessPacket( int id, unsigned char* buffer )
 	case PACKETINFO::CLIENT_TO_SERVER::STARTMATCHING:
 	{
 		PACKET::CLIENT_TO_SERVER::StartMatchingPacket* p = reinterpret_cast<PACKET::CLIENT_TO_SERVER::StartMatchingPacket*>( buffer );
-		LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_STARTMATCHING, new LOBBY::StartMatchingTask{ id } );
+		MatchMaker::GetInstance().PushTask( MATCH::TASK_TYPE::USER_STARTMATCHING, new MATCH::StartMatchingTask{ LobbyManager::GetInstance().GetSession( id ) } );
 	}
 	break;
 	case PACKETINFO::CLIENT_TO_SERVER::STOPMATCHING:
 	{
 		PACKET::CLIENT_TO_SERVER::StopMatchingPacket* p = reinterpret_cast<PACKET::CLIENT_TO_SERVER::StopMatchingPacket*>( buffer );
-		LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_STOPMATCHING, new LOBBY::StopMatchingTask{ id } );
+		MatchMaker::GetInstance().PushTask( MATCH::TASK_TYPE::USER_STOPMATCHING, new MATCH::StopMatchingTask{ LobbyManager::GetInstance().GetSession( id ) } );
 	}
 	break;
 

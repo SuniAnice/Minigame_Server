@@ -143,6 +143,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="GameManager.cpp" />
     <ClCompile Include="LogUtil.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainServer.cpp" />
@@ -151,6 +152,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AutoCall.hpp" />
+    <ClInclude Include="BaseManager.h" />
+    <ClInclude Include="GameManager.h" />
     <ClInclude Include="LogUtil.h" />
     <ClInclude Include="MainServer.h" />
     <ClInclude Include="LobbyManager.h" />

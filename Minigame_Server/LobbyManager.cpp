@@ -3,25 +3,12 @@
 #include "LobbyManager.h"
 #include "LogUtil.h"
 #include "MainServer.h"
+#include "MatchMaker.h"
 
 
-LobbyManager::LobbyManager()
-{
-	m_Thread = static_cast<std::thread> ( [&]() 
-		{
-			this->ThreadFunc();
-		} );
-}
+LobbyManager::LobbyManager() {}
 
-LobbyManager::~LobbyManager()
-{
-	m_Thread.join();
-}
-
-void LobbyManager::PushTask( LOBBY::TASK_TYPE type, void* info )
-{
-	m_tasks.push( { type, info } );
-}
+LobbyManager::~LobbyManager() {}
 
 void LobbyManager::ThreadFunc()
 {
@@ -116,16 +103,6 @@ void LobbyManager::ThreadFunc()
 
 				}
 			}
-		}
-		break;
-		case LOBBY::TASK_TYPE::USER_STARTMATCHING:
-		{
-
-		}
-			break;
-		case LOBBY::TASK_TYPE::USER_STOPMATCHING:
-		{
-
 		}
 		break;
 		}

@@ -6,6 +6,7 @@
 #include <MSWSock.h>
 
 #include <iostream>
+#include <vector>
 
 
 #pragma comment(lib, "ws2_32.lib")
@@ -22,6 +23,12 @@ enum class OP_TYPE
 enum class USER_STATE
 {
 	STATE_READY, STATE_CONNECTED, STATE_INGAME
+};
+
+enum class GAME_STATE
+{
+	WAIT_FOR_PLAYERS,
+
 };
 
 struct OVERLAPPED_EXTENDED
@@ -41,6 +48,12 @@ struct Session {
 	int key;
 	int prevSize;
 	std::wstring nickname;
+};
+
+struct GameRoom
+{
+	std::vector< Session* > users;
+	GAME_STATE state = GAME_STATE::WAIT_FOR_PLAYERS;
 };
 
 namespace LOBBY
@@ -68,23 +81,37 @@ namespace LOBBY
 		int id;
 		std::wstring message;
 	};
-
-	struct StartMatchingTask
-	{
-		int id;
-	};
-
-	struct StopMatchingTask
-	{
-		int id;
-	};
 }
 
 namespace MATCH
 {
 	enum class TASK_TYPE
 	{
-		
+		USER_STARTMATCHING,
+		USER_STOPMATCHING,
+	};
+
+	struct StartMatchingTask
+	{
+		Session* session;
+	};
+
+	struct StopMatchingTask
+	{
+		Session* session;
+	};
+}
+
+namespace INGAME
+{
+	enum class TASK_TYPE
+	{
+		ROOM_CREATE,
+	};
+
+	struct CreateRoomTask
+	{
+		GameRoom* room;
 	};
 }
 

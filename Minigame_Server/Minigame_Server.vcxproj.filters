@@ -20,6 +20,9 @@
     <ClCompile Include="MatchMaker.cpp">
       <Filter>Managers</Filter>
     </ClCompile>
+    <ClCompile Include="GameManager.cpp">
+      <Filter>Managers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MainServer.h" />
@@ -37,6 +40,12 @@
       <Filter>Utility</Filter>
     </ClInclude>
     <ClInclude Include="MatchMaker.h">
+      <Filter>Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="GameManager.h">
+      <Filter>Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseManager.h">
       <Filter>Managers</Filter>
     </ClInclude>
   </ItemGroup>
