@@ -229,7 +229,12 @@ void MainServer::ProcessPacket( int id, unsigned char* buffer )
 		MatchMaker::GetInstance().PushTask( MATCH::TASK_TYPE::USER_STOPMATCHING, new MATCH::StopMatchingTask{ LobbyManager::GetInstance().GetSession( id ) } );
 	}
 	break;
-
+	case PACKETINFO::CLIENT_TO_SERVER::GAMEREADY:
+	{
+		PACKET::CLIENT_TO_SERVER::GameReadyPacket* p = reinterpret_cast< PACKET::CLIENT_TO_SERVER::GameReadyPacket* >( buffer );
+		//GameManager::GetInstance().PushTask(INGAME::)
+	}
+	break;
 	default:
 	{
 		PRINT_LOG( "알 수 없는 패킷 타입입니다 : " + buffer[ 1 ] );

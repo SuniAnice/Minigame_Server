@@ -24,11 +24,6 @@ enum class OP_TYPE
 	OP_RECV, OP_SEND, OP_ACCEPT
 };
 
-enum class USER_STATE
-{
-	STATE_READY, STATE_CONNECTED, STATE_INGAME
-};
-
 enum class GAME_STATE
 {
 	WAIT_FOR_PLAYERS,
@@ -48,7 +43,6 @@ struct OVERLAPPED_EXTENDED
 struct Session {
 	OVERLAPPED_EXTENDED overlapped;
 	SOCKET socket;
-	USER_STATE state = USER_STATE::STATE_READY;
 	int key;
 	int prevSize;
 	std::wstring nickname;
@@ -66,6 +60,7 @@ struct GameRoom
 	std::vector< Session* > userSessions;
 	GAME_STATE state = GAME_STATE::WAIT_FOR_PLAYERS;
 	std::unordered_map <int, UserInfo> userInfo;
+	int readycount;
 };
 
 
@@ -126,6 +121,11 @@ namespace INGAME
 	{
 		GameRoom* room;
 	};
+
+	struct UserReadyTask
+	{
+		int id;
+	};
 }
 
 namespace PACKETINFO
@@ -146,6 +146,7 @@ namespace PACKETINFO
 		LOBBYCHAT,
 		STARTMATCHING,
 		STOPMATCHING,
+		GAMEREADY,
 	};
 }
 
@@ -223,6 +224,12 @@ namespace PACKET
 		{
 			unsigned char size = sizeof( StopMatchingPacket );
 			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::STOPMATCHING;
+		};
+
+		struct GameReadyPacket
+		{
+			unsigned char size = sizeof( GameReadyPacket );
+			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::GAMEREADY;
 		};
 	}
 }

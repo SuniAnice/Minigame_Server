@@ -100,7 +100,7 @@ void LobbyManager::ThreadFunc()
 					wmemcpy( packet.nickname, m_users[ *id ]->nickname.c_str(), m_users[ *id ]->nickname.size() );
 					BroadCastLobby( &packet );
 				}
-				delete ( m_users[ *id ] );
+				delete m_users[ *id ];
 				m_users.erase( *id );
 			}
 		}
@@ -125,8 +125,7 @@ int LobbyManager::GetNewId( SOCKET socket )
 	{
 		if ( !m_users.count( i ) )
 		{
-			m_users[ i ] = new Session();
-			m_users[ i ]->state = USER_STATE::STATE_CONNECTED;
+			m_users[ i ] = new Session;
 			m_users[ i ]->key = i;
 			m_users[ i ]->socket = socket;
 			return i;

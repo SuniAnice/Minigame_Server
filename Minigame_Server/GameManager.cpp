@@ -10,6 +10,10 @@ GameManager::GameManager()
 
 GameManager::~GameManager()
 {
+	for ( auto& room : m_rooms )
+	{
+		delete room;
+	}
 }
 
 void GameManager::ThreadFunc()

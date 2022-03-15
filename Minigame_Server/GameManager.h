@@ -14,8 +14,6 @@ public:
 	virtual ~GameManager();
 
 	virtual void ThreadFunc();
-
 private:
 	std::vector < GameRoom* > m_rooms;
 };
-

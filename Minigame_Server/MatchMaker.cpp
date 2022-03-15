@@ -19,6 +19,8 @@ void MatchMaker::ThreadFunc()
 			std::this_thread::yield();
 			continue;
 		}
+		
+
 
 		switch ( task.first )
 		{
@@ -28,14 +30,26 @@ void MatchMaker::ThreadFunc()
 			if ( t != nullptr )
 			{
 				m_matchingUser.emplace_back( t->session );
+				// 접속 종료한 플레이어 체크
+				for ( auto it = m_matchingUser.begin(); it != m_matchingUser.end(); it++ )
+				{
+					if ( *it == nullptr )
+					{
+						it = m_matchingUser.erase( it );
+					}
+				}
+				// 최대 인원수만큼의 플레이어가 존재한다면
 				if ( m_matchingUser.size() >= MAX_PLAYER_IN_ROOM )
 				{
 					GameRoom* room = new GameRoom;
 					for ( int i = 0; i < MAX_PLAYER_IN_ROOM; i++ )
 					{
-						room->userSessions.push_back( m_matchingUser.front() );
-						room->userInfo[ i ].userNum = m_matchingUser.front()->key;
-						wmemcpy( room->userInfo[ i ].nickname, m_matchingUser.front()->nickname.c_str(), m_matchingUser.front()->nickname.size() );
+						if ( m_matchingUser.front() != nullptr )
+						{
+							room->userSessions.push_back( m_matchingUser.front() );
+							room->userInfo[ i ].userNum = m_matchingUser.front()->key;
+							wmemcpy( room->userInfo[ i ].nickname, m_matchingUser.front()->nickname.c_str(), m_matchingUser.front()->nickname.size() );
+						}
 						m_matchingUser.pop_front();
 					}
 					GameManager::GetInstance().PushTask( INGAME::TASK_TYPE::ROOM_CREATE, new INGAME::CreateRoomTask{ room } );

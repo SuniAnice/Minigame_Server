@@ -16,7 +16,7 @@ public:
 
 	void SetHandle( HANDLE handle );
 
-	Session* GetSession(int id);
+	Session* GetSession( int id );
 private:
 	std::unordered_map < int, Session* > m_users;
 
