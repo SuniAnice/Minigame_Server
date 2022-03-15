@@ -2,10 +2,10 @@
 
 #include "GameManager.h"
 #include "MatchMaker.h"
+#include "LogUtil.h"
 
 
 MatchMaker::MatchMaker() {}
-
 
 MatchMaker::~MatchMaker() {}
 
@@ -38,6 +38,7 @@ void MatchMaker::ThreadFunc()
 					}
 					GameManager::GetInstance().PushTask( INGAME::TASK_TYPE::ROOM_CREATE, new INGAME::CreateRoomTask{ room } );
 				}
+				PRINT_LOG( t->session->key + "번 플레이어 매칭 시작" );
 				delete task.second;
 			}
 		}
@@ -48,6 +49,7 @@ void MatchMaker::ThreadFunc()
 			if ( t != nullptr )
 			{
 				m_matchingUser.remove( t->session );
+				PRINT_LOG( t->session->key + "번 플레이어 매칭 취소" );
 				delete task.second;
 			}
 		}

@@ -179,13 +179,13 @@ void MainServer::WorkerFunc()
 
 void MainServer::SendPacket( SOCKET& target, void* p )
 {
-	//int p_size = reinterpret_cast<unsigned char*>( p )[ 0 ];
+	int p_size = reinterpret_cast<unsigned char*>( p )[ 0 ];
 	OVERLAPPED_EXTENDED* overlapped = new OVERLAPPED_EXTENDED;
 	overlapped->opType = OP_TYPE::OP_SEND;
 	memset( &overlapped->overlapped, 0, sizeof( overlapped->overlapped ) );
-	memcpy( &overlapped->packetBuffer, p, BUFFER_SIZE );
+	memcpy( &overlapped->packetBuffer, p, p_size );
 	overlapped->wsaBuf.buf = reinterpret_cast<char*>( overlapped->packetBuffer );
-	overlapped->wsaBuf.len = BUFFER_SIZE;
+	overlapped->wsaBuf.len = p_size;
 
 	int ret = WSASend( target, &( overlapped->wsaBuf ), 1, NULL, 0, &overlapped->overlapped, NULL );
 }
