@@ -2,6 +2,7 @@
 
 #include "MainServer.h"
 #include "LobbyManager.h"
+#include "LogUtil.h"
 #include <iostream>
 
 
@@ -22,19 +23,19 @@ void MainServer::Init()
 	WSADATA wsa;
 	if ( WSAStartup( MAKEWORD( 2, 2 ), &wsa) != 0 )
 	{
-		std::cout << "WSAStartup" << std::endl;
+		PRINT_LOG( "WSAStartup" );
 	}
 
 	hIOCP = CreateIoCompletionPort( INVALID_HANDLE_VALUE, NULL, 0, 0 );
 	if ( hIOCP == NULL )
 	{
-		std::cout << "CreateIoCompletionPort" << std::endl;
+		PRINT_LOG( "CreateIoCompletionPort" );
 	}
 
 	listenSocket = WSASocket( AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED );
 	if ( listenSocket == INVALID_SOCKET )
 	{
-		std::cout << "socket" << std::endl;
+		PRINT_LOG( "Socket" );
 	}
 
 	CreateIoCompletionPort( reinterpret_cast< HANDLE >( listenSocket ), hIOCP, 0, 0 );
@@ -46,12 +47,12 @@ void MainServer::Init()
 	serverAddr.sin_port = htons( PORT );
 	if ( ::bind( listenSocket, (SOCKADDR*)&serverAddr, sizeof( serverAddr ) ) == SOCKET_ERROR )
 	{
-		std::cout << "bind" << std::endl;
+		PRINT_LOG( "Bind" );
 	}
 
 	if ( listen( listenSocket, SOMAXCONN ) == SOCKET_ERROR )
 	{
-		std::cout << "listen" << std::endl;
+		PRINT_LOG( "Listen" );
 	}
 
 	// 스레드 생성
@@ -106,7 +107,7 @@ void MainServer::WorkerFunc()
 			}
 			else
 			{
-				std::cout << "GQCS" << std::endl;
+				PRINT_LOG( "GQCS" );
 				// 로그아웃 처리
 				LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_LOGOUT, &key );
 				continue;
@@ -165,7 +166,7 @@ void MainServer::WorkerFunc()
 			break;
 		default:
 		{
-			std::cout << "잘못된 Operation Type입니다 : " << static_cast< int >( overEx->opType ) << std::endl;
+			PRINT_LOG( "잘못된 Operation Type입니다 : " + static_cast<int>( overEx->opType ));
 		}
 			break;
 		}
@@ -227,7 +228,7 @@ void MainServer::ProcessPacket( int id, unsigned char* buffer )
 
 	default:
 	{
-		std::cout << "알 수 없는 패킷 타입입니다 : " << buffer[ 1 ] << std::endl;
+		PRINT_LOG( "알 수 없는 패킷 타입입니다 : " + buffer[ 1 ] );
 	}
 		break;
 	}

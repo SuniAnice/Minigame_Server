@@ -24,7 +24,7 @@ public:
 
 	Session* GetSession(int id);
 private:
-	std::unordered_map < int, Session > m_users;
+	std::unordered_map < int, Session* > m_users;
 
 	void ThreadFunc();
 

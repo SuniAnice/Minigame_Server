@@ -8,6 +8,8 @@
 #include <concurrent_queue.h>
 
 
+constexpr int MAX_PLAYER_IN_ROOM = 4;
+
 class MatchMaker : public Base::TSingleton < MatchMaker >
 {
 public:
