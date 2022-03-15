@@ -157,22 +157,22 @@ namespace PACKET
 		{
 			unsigned char size = sizeof( AddPlayerPacket );
 			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::ADDPLAYER;
-			wchar_t nickname[ 10 ];
+			wchar_t nickname[ 10 ] = {};
 		};
 
 		struct RemovePlayerPacket
 		{
 			unsigned char size = sizeof( RemovePlayerPacket );
 			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::REMOVEPLAYER;
-			wchar_t nickname[ 10 ];
+			wchar_t nickname[ 10 ] = {};
 		};
 
 		struct LobbyChatPacket
 		{
 			unsigned char size = sizeof( LobbyChatPacket );
 			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::LOBBYCHAT;
-			wchar_t nickname[ 10 ];
-			wchar_t message[ 50 ];
+			wchar_t nickname[ 10 ] = {};
+			wchar_t message[ 50 ] = {};
 		};
 	}
 
@@ -182,14 +182,14 @@ namespace PACKET
 		{
 			unsigned char size = sizeof( LoginPacket );
 			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::LOGIN;
-			wchar_t nickname[ 10 ];
+			wchar_t nickname[ 10 ] = {};
 		};
 
 		struct LobbyChatPacket
 		{
 			unsigned char size = sizeof( LobbyChatPacket );
 			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::LOBBYCHAT;
-			wchar_t message[ 50 ];
+			wchar_t message[ 50 ] = {};
 		};
 
 		struct StartMatchingPacket
