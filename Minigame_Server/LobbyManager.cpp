@@ -90,8 +90,6 @@ void LobbyManager::ThreadFunc()
 			int* id = reinterpret_cast<int*>( task.second );
 			if ( id != nullptr )
 			{
-				delete ( m_users[ *id ] );
-				m_users.erase( *id );
 				std::cout << *id << "번 플레이어 로그아웃" << std::endl;
 
 				// 닉네임을 설정한 사람이면
@@ -100,8 +98,9 @@ void LobbyManager::ThreadFunc()
 					PACKET::SERVER_TO_CLIENT::RemovePlayerPacket packet;
 					wmemcpy( packet.nickname, m_users[ *id ]->nickname.c_str(), m_users[ *id ]->nickname.size() );
 					BroadCastLobby( &packet );
-
 				}
+				delete ( m_users[ *id ] );
+				m_users.erase( *id );
 			}
 		}
 		break;
@@ -141,7 +140,7 @@ void LobbyManager::BroadCastLobby( void* packet )
 	{
 		if ( player.second->nickname.size() )
 		{
-			MainServer::GetInstance().SendPacket( player.second->socket, &packet );
+			MainServer::GetInstance().SendPacket( player.second->socket, packet );
 		}
 	}
 }
