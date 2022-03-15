@@ -23,6 +23,9 @@
     <ClCompile Include="GameManager.cpp">
       <Filter>Managers</Filter>
     </ClCompile>
+    <ClCompile Include="TimerManager.cpp">
+      <Filter>Managers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MainServer.h" />
@@ -46,6 +49,9 @@
       <Filter>Managers</Filter>
     </ClInclude>
     <ClInclude Include="BaseManager.h">
+      <Filter>Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="TimerManager.h">
       <Filter>Managers</Filter>
     </ClInclude>
   </ItemGroup>

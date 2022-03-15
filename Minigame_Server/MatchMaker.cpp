@@ -16,7 +16,7 @@ void MatchMaker::ThreadFunc()
 	{
 		if ( !m_tasks.try_pop( task ) )
 		{
-			std::this_thread::yield();
+			std::this_thread::sleep_for( 10ms );
 			continue;
 		}
 		

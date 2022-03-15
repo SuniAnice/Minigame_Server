@@ -5,9 +5,10 @@
 #include <WS2tcpip.h>
 #include <MSWSock.h>
 
+#include <chrono>
 #include <iostream>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 
 #pragma comment(lib, "ws2_32.lib")
@@ -115,6 +116,7 @@ namespace INGAME
 	enum class TASK_TYPE
 	{
 		ROOM_CREATE,
+		USER_READY,
 	};
 
 	struct CreateRoomTask
@@ -122,11 +124,18 @@ namespace INGAME
 		GameRoom* room;
 	};
 
-	struct UserReadyTask
-	{
-		int id;
-	};
 }
+
+struct TimerEvent
+{
+	std::chrono::system_clock::time_point time;
+	std::pair < INGAME::TASK_TYPE, void* > task;
+
+	bool operator< ( const TimerEvent& e ) const
+	{
+		return this->time > e.time;
+	}
+};
 
 namespace PACKETINFO
 {

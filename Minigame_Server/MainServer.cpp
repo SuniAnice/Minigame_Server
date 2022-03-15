@@ -3,6 +3,7 @@
 #include "GameManager.h"
 #include "MainServer.h"
 #include "MatchMaker.h"
+#include "TimerManager.h"
 #include "LobbyManager.h"
 #include "LogUtil.h"
 #include <iostream>
@@ -71,6 +72,7 @@ void MainServer::Init()
 	LobbyManager::GetInstance();
 	MatchMaker::GetInstance();
 	GameManager::GetInstance();
+	TimerManager::GetInstance();
 }
 
 void MainServer::Run()
@@ -227,12 +229,6 @@ void MainServer::ProcessPacket( int id, unsigned char* buffer )
 	{
 		PACKET::CLIENT_TO_SERVER::StopMatchingPacket* p = reinterpret_cast<PACKET::CLIENT_TO_SERVER::StopMatchingPacket*>( buffer );
 		MatchMaker::GetInstance().PushTask( MATCH::TASK_TYPE::USER_STOPMATCHING, new MATCH::StopMatchingTask{ LobbyManager::GetInstance().GetSession( id ) } );
-	}
-	break;
-	case PACKETINFO::CLIENT_TO_SERVER::GAMEREADY:
-	{
-		PACKET::CLIENT_TO_SERVER::GameReadyPacket* p = reinterpret_cast< PACKET::CLIENT_TO_SERVER::GameReadyPacket* >( buffer );
-		//GameManager::GetInstance().PushTask(INGAME::)
 	}
 	break;
 	default:

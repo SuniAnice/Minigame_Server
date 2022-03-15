@@ -149,6 +149,7 @@
     <ClCompile Include="MainServer.cpp" />
     <ClCompile Include="LobbyManager.cpp" />
     <ClCompile Include="MatchMaker.cpp" />
+    <ClCompile Include="TimerManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AutoCall.hpp" />
@@ -160,6 +161,7 @@
     <ClInclude Include="global.h" />
     <ClInclude Include="MatchMaker.h" />
     <ClInclude Include="Slngleton.h" />
+    <ClInclude Include="TimerManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

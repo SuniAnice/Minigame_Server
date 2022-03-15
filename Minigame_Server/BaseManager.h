@@ -8,6 +8,9 @@
 #include <concurrent_queue.h>
 
 
+using namespace std::chrono_literals;
+
+
 template <typename T>
 class BaseManager
 {
