@@ -41,14 +41,14 @@ void LobbyManager::ThreadFunc()
 			LOBBY::LoginTask* t = reinterpret_cast< LOBBY::LoginTask* >( task.second );
 			if ( t != nullptr )
 			{
-				if ( FindUserName( t->nickname ) )
+				if ( !FindUserName( t->nickname ) )
 				{
 					PACKET::SERVER_TO_CLIENT::LoginOkPacket okPacket;
 					MainServer::GetInstance().SendPacket( m_users[ t->id ]->socket, &okPacket );
 					for ( auto& pl : m_users )
 					{
 						// 접속 중인 플레이어들의 정보 전송
-						if ( pl.second->nickname.size() != 0 )
+						if ( pl.second->nickname.size() != 0 && pl.second->nickname != t->nickname )
 						{
 							PACKET::SERVER_TO_CLIENT::AddPlayerPacket plpacket;
 							wmemcpy( plpacket.nickname, m_users[ pl.first ]->nickname.c_str(), m_users[ pl.first ]->nickname.size() );
