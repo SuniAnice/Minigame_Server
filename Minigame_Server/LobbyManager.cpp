@@ -89,7 +89,7 @@ void LobbyManager::ThreadFunc()
 		case LOBBY::TASK_TYPE::USER_LOGOUT:
 		{
 			int* id = reinterpret_cast<int*>( task.second );
-			if ( id != nullptr )
+			if ( m_users[ *id ] != nullptr )
 			{
 				std::cout << *id << "번 플레이어 로그아웃" << std::endl;
 
@@ -100,7 +100,7 @@ void LobbyManager::ThreadFunc()
 					wmemcpy( packet.nickname, m_users[ *id ]->nickname.c_str(), m_users[ *id ]->nickname.size() );
 					BroadCastLobby( &packet );
 				}
-				delete m_users[ *id ];
+				delete (m_users[ *id ]);
 				m_users.erase( *id );
 			}
 		}
