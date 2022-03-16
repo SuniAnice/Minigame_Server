@@ -114,7 +114,7 @@ void GameManager::ThreadFunc()
 						// 유저들에게 라운드 준비를 알림
 						BroadCastPacket( t->room, &packet );
 
-						TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + READY_TIME, INGAME::TASK_TYPE::ROUND_READY, new INGAME::RoundReadyTask{ t->room } );
+						TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + READY_TIME, INGAME::TASK_TYPE::ROUND_READY, new INGAME::RoundReadyTask{ t->room, t->room->currentRound } );
 						PRINT_LOG( "게임 상태 - 다음 라운드 시작됨" );
 					}
 					else
@@ -129,6 +129,7 @@ void GameManager::ThreadFunc()
 
 						// 게임 종료 처리 및 방 제거 태스크 등록
 						TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + GAME_TIME, INGAME::TASK_TYPE::ROOM_REMOVE, new INGAME::RemoveRoomTask{ t->room } );
+						PRINT_LOG( "게임 상태 - 종료" );
 					}
 					
 				}
@@ -143,7 +144,8 @@ void GameManager::ThreadFunc()
 			{
 				m_rooms.erase( std::remove( m_rooms.begin(), m_rooms.end(), t->room ) );
 				delete (t->room);
-				
+				PRINT_LOG( "방 제거 요청 받음" );
+
 				delete task.second;
 			}
 		}
