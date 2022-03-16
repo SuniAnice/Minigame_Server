@@ -50,7 +50,7 @@ void LobbyManager::ThreadFunc()
 					for ( auto& pl : m_users )
 					{
 						// 접속 중인 플레이어들의 정보 전송
-						if ( pl.second->nickname.size() != 0 && pl.second->nickname != t->nickname )
+						if ( pl.second->nickname.size() != 0 && pl.second->nickname != t->nickname && pl.second->roomIndex == -1 )
 						{
 							PACKET::SERVER_TO_CLIENT::AddPlayerPacket plpacket;
 							wmemcpy( plpacket.nickname, m_users[ pl.first ]->nickname.c_str(), m_users[ pl.first ]->nickname.size() );
@@ -136,11 +136,11 @@ void LobbyManager::ThreadFunc()
 			if ( t != nullptr )
 			{
 				t->session->roomIndex = t->roomNum;
+
 				PACKET::SERVER_TO_CLIENT::RemovePlayerPacket packet;
 				wmemcpy( packet.nickname, t->session->nickname.c_str(), t->session->nickname.size() );
-				BroadCastLobby( &packet );
 
-				m_users.erase( t->session->key );
+				BroadCastLobby( &packet );
 				delete task.second;
 			}
 		}
@@ -178,7 +178,7 @@ void LobbyManager::BroadCastLobby( void* packet )
 {
 	for ( auto& player : m_users )
 	{
-		if ( player.second->nickname.size() )
+		if ( player.second->nickname.size() && player.second->roomIndex == -1 )
 		{
 			MainServer::GetInstance().SendPacket( player.second->socket, packet );
 		}

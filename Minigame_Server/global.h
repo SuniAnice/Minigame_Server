@@ -21,7 +21,7 @@ using namespace std::chrono;
 
 constexpr int PORT = 4000;
 constexpr int BUFFER_SIZE = 1024;
-constexpr int MAX_PLAYER_IN_ROOM = 1;		// 최대 방 인원수
+constexpr int MAX_PLAYER_IN_ROOM = 2;		// 최대 방 인원수
 constexpr int SEEKER_COUNT = 1;				// 술래 인원수
 constexpr int MAX_ROUND = 5;				// 최대 진행 라운드
 constexpr int NUM_OF_OBJECTS = 10;			// 랜덤하게 설정될 오브젝트의 수
@@ -60,7 +60,7 @@ struct Session {
 	int key;
 	int prevSize;
 	std::wstring nickname;
-	size_t roomIndex = -1;
+	int roomIndex = -1;
 };
 
 // 인게임 유저 정보
