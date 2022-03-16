@@ -90,7 +90,7 @@ void LobbyManager::ThreadFunc()
 		case LOBBY::TASK_TYPE::USER_LOGOUT:
 		{
 			int* id = reinterpret_cast<int*>( task.second );
-			if ( m_users[ *id ] != nullptr )
+			if ( m_users.count( *id ) )
 			{
 				std::cout << *id << "번 플레이어 로그아웃" << std::endl;
 

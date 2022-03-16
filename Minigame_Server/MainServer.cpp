@@ -48,10 +48,14 @@ void MainServer::Init()
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_addr.s_addr = htonl( INADDR_ANY );
 	serverAddr.sin_port = htons( PORT );
+
+
 	if ( ::bind( listenSocket, (SOCKADDR*)&serverAddr, sizeof( serverAddr ) ) == SOCKET_ERROR )
 	{
 		PRINT_LOG( "Bind" );
 	}
+
+
 
 	if ( listen( listenSocket, SOMAXCONN ) == SOCKET_ERROR )
 	{
