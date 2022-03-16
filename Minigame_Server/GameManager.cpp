@@ -56,6 +56,13 @@ void GameManager::ThreadFunc()
 			if ( t != nullptr )
 			{
 				PACKET::SERVER_TO_CLIENT::RoundReadyPacket packet;
+				int temp = rand() % MAX_PLAYER_IN_ROOM + 1;
+				// 같은 사람은 술래가 되지 않도록
+				while ( temp == t->room->currentSeeker )
+				{
+					temp = rand() % MAX_PLAYER_IN_ROOM + 1;
+				}
+				packet.seeker = t->room->userSessions[ temp ]->key;
 
 				// 유저들에게 라운드 준비를 알림
 				for ( auto& pl : t->room->userSessions )
@@ -103,6 +110,14 @@ void GameManager::ThreadFunc()
 						t->room->currentRound++;
 
 						PACKET::SERVER_TO_CLIENT::RoundReadyPacket packet;
+
+						int temp = rand() % MAX_PLAYER_IN_ROOM + 1;
+						// 같은 사람은 술래가 되지 않도록
+						while ( temp == t->room->currentSeeker )
+						{
+							temp = rand() % MAX_PLAYER_IN_ROOM + 1;
+						}
+						packet.seeker = t->room->userSessions[ temp ]->key;
 
 						// 유저들에게 라운드 준비를 알림
 						for ( auto& pl : t->room->userSessions )

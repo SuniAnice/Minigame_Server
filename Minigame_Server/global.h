@@ -23,6 +23,7 @@ constexpr int PORT = 4000;
 constexpr int BUFFER_SIZE = 1024;
 constexpr int MAX_PLAYER_IN_ROOM = 4;
 constexpr int MAX_ROUND = 5;
+constexpr int SEEKER_COUNT = 1;
 constexpr size_t MAX_USER = 100000;
 constexpr seconds WAIT_TIME = 10s;
 constexpr seconds READY_TIME = 30s;
@@ -73,6 +74,7 @@ struct GameRoom
 	GAME_STATE state = GAME_STATE::ROUND_WAIT;
 	std::unordered_map <int, UserInfo> userInfo;
 	int currentRound = 1;
+	int currentSeeker = -1;
 };
 
 
@@ -247,6 +249,7 @@ namespace PACKET
 		{
 			unsigned char size = sizeof( RoundReadyPacket );
 			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::ROUNDREADY;
+			int seeker = 0;
 		};
 
 		struct RoundStartPacket
