@@ -61,6 +61,7 @@ struct Session {
 	int prevSize;
 	std::wstring nickname;
 	int roomIndex = -1;
+	bool isMatching = false;
 };
 
 // 인게임 유저 정보
@@ -131,6 +132,7 @@ namespace MATCH
 	{
 		USER_STARTMATCHING,
 		USER_STOPMATCHING,
+		USER_REMOVE,
 	};
 
 	struct StartMatchingTask
@@ -139,6 +141,11 @@ namespace MATCH
 	};
 
 	struct StopMatchingTask
+	{
+		Session* session;
+	};
+
+	struct RemovePlayerTask
 	{
 		Session* session;
 	};
@@ -155,6 +162,7 @@ namespace INGAME
 		ROUND_END,
 		MOVE_PLAYER,
 		ATTACK_PLAYER,
+		REMOVE_PLAYER,
 	};
 
 	struct CreateRoomTask
@@ -198,6 +206,13 @@ namespace INGAME
 	{
 		Session* session;
 		int index;
+	};
+
+	struct RemovePlayerTask
+	{
+		int roomindex;
+		int index;
+		Session* session;
 	};
 }
 

@@ -63,8 +63,15 @@ void GameManager::ThreadFunc()
 			if ( t != nullptr )
 			{
 				PACKET::SERVER_TO_CLIENT::RoundReadyPacket packet;
+				int picked = PickSeeker( t->room );
 
-				packet.seeker = t->room->userSessions[ PickSeeker( t->room ) ]->key;
+				if ( picked == -1 )
+				{
+					// 게임 종료 처리 및 방 제거 태스크 등록
+					PushTask( INGAME::TASK_TYPE::ROOM_REMOVE, new INGAME::RemoveRoomTask{ t->room } );
+					break;
+				}
+				packet.seeker = t->room->userSessions[ picked ]->key;
 
 				// 유저들에게 라운드 준비를 알림
 				BroadCastPacket( t->room, &packet );
@@ -109,7 +116,15 @@ void GameManager::ThreadFunc()
 
 						PACKET::SERVER_TO_CLIENT::RoundReadyPacket packet;
 
-						packet.seeker = t->room->userSessions[ PickSeeker( t->room ) ]->key;
+						int picked = PickSeeker( t->room );
+
+						if ( picked == -1 )
+						{
+							// 게임 종료 처리 및 방 제거 태스크 등록
+							PushTask( INGAME::TASK_TYPE::ROOM_REMOVE, new INGAME::RemoveRoomTask{ t->room } );
+							break;
+						}
+						packet.seeker = t->room->userSessions[ picked ]->key;
 
 						// 유저들에게 라운드 준비를 알림
 						BroadCastPacket( t->room, &packet );
@@ -143,7 +158,7 @@ void GameManager::ThreadFunc()
 			if ( t != nullptr )
 			{
 				m_rooms.erase( std::remove( m_rooms.begin(), m_rooms.end(), t->room ) );
-				delete (t->room);
+				delete ( t->room );
 				PRINT_LOG( "방 제거 요청 받음" );
 
 				delete task.second;
@@ -184,6 +199,20 @@ void GameManager::ThreadFunc()
 			}
 		}
 		break;
+		case INGAME::TASK_TYPE::REMOVE_PLAYER:
+		{
+			INGAME::RemovePlayerTask* t = reinterpret_cast<INGAME::RemovePlayerTask*>( task.second );
+			if ( t != nullptr )
+			{
+				m_rooms[ t->roomindex ]->userInfo.erase( t->index );
+				m_rooms[ t->roomindex ]->userSessions.erase( std::remove( m_rooms[ t->roomindex ]->userSessions.begin(),
+					m_rooms[ t->roomindex ]->userSessions.end(), t->session ) );
+				PRINT_LOG( "플레이어 제거 요청 받음" );
+
+				delete task.second;
+			}
+		}
+		break;
 		}
 	}
 }
@@ -207,12 +236,13 @@ void GameManager::BroadCastPacketExceptMe( GameRoom* room, void* packet, int ind
 
 int GameManager::PickSeeker( GameRoom* room )
 {
-	int temp = rand() % MAX_PLAYER_IN_ROOM;
+	if ( room->userSessions.size() == 0 ) return -1;
+	int temp = rand() % room->userSessions.size();
 	// 같은 사람은 술래가 되지 않도록
 	while ( temp == room->currentSeeker )
 	{
-		temp = rand() % MAX_PLAYER_IN_ROOM;
+		temp = rand() % room->userSessions.size();
 	}
-
+	room->currentSeeker = temp;
 	return temp;
 }

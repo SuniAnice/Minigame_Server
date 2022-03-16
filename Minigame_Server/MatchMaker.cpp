@@ -20,8 +20,6 @@ void MatchMaker::ThreadFunc()
 			continue;
 		}
 		
-
-
 		switch ( task.first )
 		{
 		case MATCH::TASK_TYPE::USER_STARTMATCHING:
@@ -30,14 +28,7 @@ void MatchMaker::ThreadFunc()
 			if ( t != nullptr )
 			{
 				m_matchingUser.emplace_back( t->session );
-				// 접속 종료한 플레이어 체크
-				for ( auto it = m_matchingUser.begin(); it != m_matchingUser.end(); it++ )
-				{
-					if ( *it == nullptr )
-					{
-						it = m_matchingUser.erase( it );
-					}
-				}
+				t->session->isMatching = true;
 				// 최대 인원수만큼의 플레이어가 존재한다면
 				if ( m_matchingUser.size() >= MAX_PLAYER_IN_ROOM )
 				{
@@ -47,11 +38,13 @@ void MatchMaker::ThreadFunc()
 						if ( m_matchingUser.front() != nullptr )
 						{
 							room->userSessions.push_back( m_matchingUser.front() );
-							room->userInfo[ i ].userNum = m_matchingUser.front()->key;
-							wmemcpy( room->userInfo[ i ].nickname, m_matchingUser.front()->nickname.c_str(), m_matchingUser.front()->nickname.size() );
+							room->userInfo[ m_matchingUser.front()->key ].userNum = m_matchingUser.front()->key;
+							wmemcpy( room->userInfo[ m_matchingUser.front()->key ].nickname,
+								m_matchingUser.front()->nickname.c_str(), m_matchingUser.front()->nickname.size() );
 						}
 						m_matchingUser.pop_front();
 					}
+					t->session->isMatching = false;
 					GameManager::GetInstance().PushTask( INGAME::TASK_TYPE::ROOM_CREATE, new INGAME::CreateRoomTask{ room } );
 				}
 				PRINT_LOG( t->session->key + "번 플레이어 매칭 시작" );
@@ -64,8 +57,31 @@ void MatchMaker::ThreadFunc()
 			MATCH::StopMatchingTask* t = reinterpret_cast< MATCH::StopMatchingTask* >( task.second );
 			if ( t != nullptr )
 			{
+				t->session->isMatching = false;
 				m_matchingUser.remove( t->session );
 				PRINT_LOG( t->session->key + "번 플레이어 매칭 취소" );
+				delete task.second;
+			}
+		}
+		break;
+		case MATCH::TASK_TYPE::USER_REMOVE:
+		{
+			MATCH::RemovePlayerTask* t = reinterpret_cast<MATCH::RemovePlayerTask*>( task.second );
+			if ( t != nullptr )
+			{
+				if ( std::find( m_matchingUser.begin(), m_matchingUser.end(), t->session ) != m_matchingUser.end() )
+				{
+					// 큐에 있다면 삭제
+					m_matchingUser.remove( t->session );
+					delete ( t->session );
+					PRINT_LOG( "플레이어 매칭중 퇴장" );
+				}
+				else
+				{
+					// 아니면 게임매니저로 위임
+					GameManager::GetInstance().PushTask( INGAME::TASK_TYPE::REMOVE_PLAYER, new INGAME::RemovePlayerTask{ t->session->roomIndex, t->session->key, t->session } );
+
+				}
 				delete task.second;
 			}
 		}

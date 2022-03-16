@@ -171,7 +171,6 @@ void MainServer::WorkerFunc()
 			new_over->opType = OP_TYPE::OP_ACCEPT;
 			memset( &new_over->overlapped, 0, sizeof( new_over->overlapped ) );
 			AcceptEx( listenSocket, cSock, new_over->packetBuffer, 0, 32, 32, NULL, &new_over->overlapped );
-			
 		}
 			break;
 		default:

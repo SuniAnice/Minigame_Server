@@ -4,6 +4,7 @@
 #include "LogUtil.h"
 #include "MainServer.h"
 #include "MatchMaker.h"
+#include "GameManager.h"
 
 
 LobbyManager::LobbyManager() {}
@@ -98,11 +99,29 @@ void LobbyManager::ThreadFunc()
 				if ( m_users[ *id ]->nickname.size() )
 				{
 					m_usernames.erase( m_users[ *id ]->nickname );
-					PACKET::SERVER_TO_CLIENT::RemovePlayerPacket packet;
-					wmemcpy( packet.nickname, m_users[ *id ]->nickname.c_str(), m_users[ *id ]->nickname.size() );
-					BroadCastLobby( &packet );
+					if ( m_users[ *id ]->roomIndex == -1 )
+					{
+						PACKET::SERVER_TO_CLIENT::RemovePlayerPacket packet;
+						wmemcpy( packet.nickname, m_users[ *id ]->nickname.c_str(), m_users[ *id ]->nickname.size() );
+						BroadCastLobby( &packet );
+						// 매칭을 돌리지 않았으면 바로 제거 가능
+						if ( !m_users[ *id ]->isMatching )
+						{
+							delete ( m_users[ *id ] );
+						}
+						else
+						{
+							// 매칭중이면 객체 삭제를 매치메이커에 위임
+							MatchMaker::GetInstance().PushTask( MATCH::TASK_TYPE::USER_REMOVE, new MATCH::RemovePlayerTask{ m_users[ *id ] } );
+						}
+					}
+					else
+					{
+						// 게임에 있다면 객체 삭제를 게임매니저에 위임
+						GameManager::GetInstance().PushTask( INGAME::TASK_TYPE::REMOVE_PLAYER,
+							new INGAME::RemovePlayerTask{ m_users[ *id ]->roomIndex, *id , m_users[ *id ] } );
+					}
 				}
-				delete (m_users[ *id ]);
 				m_users.erase( *id );
 			}
 		}
