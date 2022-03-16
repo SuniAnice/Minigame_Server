@@ -16,4 +16,8 @@ public:
 	virtual void ThreadFunc();
 private:
 	std::vector < GameRoom* > m_rooms;
+
+	void BroadCastPacket( GameRoom* room, void* packet );
+
+	int PickSeeker( GameRoom* room );
 };

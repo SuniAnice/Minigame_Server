@@ -21,13 +21,14 @@ using namespace std::chrono;
 
 constexpr int PORT = 4000;
 constexpr int BUFFER_SIZE = 1024;
-constexpr int MAX_PLAYER_IN_ROOM = 4;
-constexpr int MAX_ROUND = 5;
-constexpr int SEEKER_COUNT = 1;
-constexpr size_t MAX_USER = 100000;
-constexpr seconds WAIT_TIME = 10s;
-constexpr seconds READY_TIME = 30s;
-constexpr seconds GAME_TIME = 180s;
+constexpr int MAX_PLAYER_IN_ROOM = 4;		// 최대 방 인원수
+constexpr int SEEKER_COUNT = 1;				// 술래 인원수
+constexpr int MAX_ROUND = 5;				// 최대 진행 라운드
+constexpr int NUM_OF_OBJECTS = 10;			// 랜덤하게 설정될 오브젝트의 수
+constexpr size_t MAX_USER = 100000;			// 최대 동접자
+constexpr seconds WAIT_TIME = 10s;			// 라운드 대기 시간
+constexpr seconds READY_TIME = 30s;			// 라운드 준비 시간
+constexpr seconds GAME_TIME = 180s;			// 라운드 진행 시간
 
 
 enum class OP_TYPE

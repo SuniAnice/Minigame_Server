@@ -41,10 +41,7 @@ void GameManager::ThreadFunc()
 					packet.users[ i ].userNum = t->room->userSessions[ i ]->key;
 					wmemcpy( packet.users[ i ].nickname, t->room->userSessions[ i ]->nickname.c_str(), t->room->userSessions[ i ]->nickname.size() );
 				}
-				for ( auto& pl : t->room->userSessions )
-				{
-					MainServer::GetInstance().SendPacket( pl->socket, &packet );
-				}
+				BroadCastPacket( t->room, &packet );
 				TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + WAIT_TIME, INGAME::TASK_TYPE::ROUND_WAIT, new INGAME::RoundWaitTask{ t->room } );
 				delete task.second;
 			}
@@ -56,19 +53,11 @@ void GameManager::ThreadFunc()
 			if ( t != nullptr )
 			{
 				PACKET::SERVER_TO_CLIENT::RoundReadyPacket packet;
-				int temp = rand() % MAX_PLAYER_IN_ROOM + 1;
-				// 같은 사람은 술래가 되지 않도록
-				while ( temp == t->room->currentSeeker )
-				{
-					temp = rand() % MAX_PLAYER_IN_ROOM + 1;
-				}
-				packet.seeker = t->room->userSessions[ temp ]->key;
+
+				packet.seeker = t->room->userSessions[ PickSeeker( t->room ) ]->key;
 
 				// 유저들에게 라운드 준비를 알림
-				for ( auto& pl : t->room->userSessions )
-				{
-					MainServer::GetInstance().SendPacket( pl->socket, &packet );
-				}
+				BroadCastPacket( t->room, &packet );
 				TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + READY_TIME, INGAME::TASK_TYPE::ROUND_READY, new INGAME::RoundReadyTask{ t->room, t->room->currentRound } );
 				delete task.second;
 			}
@@ -85,10 +74,7 @@ void GameManager::ThreadFunc()
 					PACKET::SERVER_TO_CLIENT::RoundStartPacket packet;
 
 					// 유저들에게 라운드 시작을 알림
-					for ( auto& pl : t->room->userSessions )
-					{
-						MainServer::GetInstance().SendPacket( pl->socket, &packet );
-					}
+					BroadCastPacket( t->room, &packet );
 
 					TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + GAME_TIME, INGAME::TASK_TYPE::ROUND_END, new INGAME::RoundEndTask{ t->room, t->room->currentRound } );
 				}
@@ -111,19 +97,11 @@ void GameManager::ThreadFunc()
 
 						PACKET::SERVER_TO_CLIENT::RoundReadyPacket packet;
 
-						int temp = rand() % MAX_PLAYER_IN_ROOM + 1;
-						// 같은 사람은 술래가 되지 않도록
-						while ( temp == t->room->currentSeeker )
-						{
-							temp = rand() % MAX_PLAYER_IN_ROOM + 1;
-						}
-						packet.seeker = t->room->userSessions[ temp ]->key;
+						packet.seeker = t->room->userSessions[ PickSeeker( t->room ) ]->key;
 
 						// 유저들에게 라운드 준비를 알림
-						for ( auto& pl : t->room->userSessions )
-						{
-							MainServer::GetInstance().SendPacket( pl->socket, &packet );
-						}
+						BroadCastPacket( t->room, &packet );
+
 						TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + READY_TIME, INGAME::TASK_TYPE::ROUND_READY, new INGAME::RoundReadyTask{ t->room } );
 					}
 					else
@@ -152,4 +130,24 @@ void GameManager::ThreadFunc()
 		break;
 		}
 	}
+}
+
+void GameManager::BroadCastPacket( GameRoom* room, void* packet )
+{
+	for ( auto& pl : room->userSessions )
+	{
+		MainServer::GetInstance().SendPacket( pl->socket, packet );
+	}
+}
+
+int GameManager::PickSeeker( GameRoom* room )
+{
+	int temp = rand() % MAX_PLAYER_IN_ROOM + 1;
+	// 같은 사람은 술래가 되지 않도록
+	while ( temp == room->currentSeeker )
+	{
+		temp = rand() % MAX_PLAYER_IN_ROOM + 1;
+	}
+
+	return temp;
 }
