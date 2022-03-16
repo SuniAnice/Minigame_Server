@@ -177,7 +177,7 @@ void GameManager::ThreadFunc()
 				PACKET::SERVER_TO_CLIENT::AttackPlayerPacket packet;
 				packet.index = t->index;
 
-				// 움직인 플레이어를 제외하고 전송
+				// 공격한 플레이어를 제외하고 전송
 				BroadCastPacketExceptMe( m_rooms[ t->session->roomIndex ], &packet, t->index );
 
 				delete task.second;

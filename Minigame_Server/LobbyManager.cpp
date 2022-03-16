@@ -41,8 +41,9 @@ void LobbyManager::ThreadFunc()
 			LOBBY::LoginTask* t = reinterpret_cast< LOBBY::LoginTask* >( task.second );
 			if ( t != nullptr )
 			{
-				if ( !FindUserName( t->nickname ) )
+				if ( !m_usernames.count( t->nickname ) )
 				{
+					m_usernames.insert( t->nickname );
 					PACKET::SERVER_TO_CLIENT::LoginOkPacket okPacket;
 					okPacket.index = t->id;
 					MainServer::GetInstance().SendPacket( m_users[ t->id ]->socket, &okPacket );
@@ -96,6 +97,7 @@ void LobbyManager::ThreadFunc()
 				// 닉네임을 설정한 사람이면
 				if ( m_users[ *id ]->nickname.size() )
 				{
+					m_usernames.erase( m_users[ *id ]->nickname );
 					PACKET::SERVER_TO_CLIENT::RemovePlayerPacket packet;
 					wmemcpy( packet.nickname, m_users[ *id ]->nickname.c_str(), m_users[ *id ]->nickname.size() );
 					BroadCastLobby( &packet );

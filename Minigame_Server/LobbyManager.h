@@ -5,6 +5,7 @@
 
 #include "BaseManager.h"
 #include <unordered_map>
+#include <unordered_set>
 
 
 class LobbyManager : public Base::TSingleton < LobbyManager >,
@@ -19,6 +20,8 @@ public:
 	Session* GetSession( const int id );
 private:
 	std::unordered_map < int, Session* > m_users;
+
+	std::unordered_set < std::wstring > m_usernames;
 
 	virtual void ThreadFunc();
 
