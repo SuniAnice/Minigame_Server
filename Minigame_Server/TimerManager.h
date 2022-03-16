@@ -14,7 +14,7 @@ public:
 	virtual ~TimerManager();
 
 	void PushTask( std::chrono::system_clock::time_point time, 
-		std::pair < INGAME::TASK_TYPE, void* > task );
+		INGAME::TASK_TYPE type, void* task );
 
 	virtual void ThreadFunc();
 private:

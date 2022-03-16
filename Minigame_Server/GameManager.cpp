@@ -2,6 +2,7 @@
 
 #include "GameManager.h"
 #include "MainServer.h"
+#include "TimerManager.h"
 
 
 GameManager::GameManager()
@@ -44,10 +45,96 @@ void GameManager::ThreadFunc()
 				{
 					MainServer::GetInstance().SendPacket( pl->socket, &packet );
 				}
+				TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + WAIT_TIME, INGAME::TASK_TYPE::ROUND_WAIT, new INGAME::RoundWaitTask{ t->room } );
 				delete task.second;
 			}
 		}
 			break;
+		case INGAME::TASK_TYPE::ROUND_WAIT:
+		{
+			INGAME::RoundWaitTask* t = reinterpret_cast<INGAME::RoundWaitTask*>( task.second );
+			if ( t != nullptr )
+			{
+				PACKET::SERVER_TO_CLIENT::RoundReadyPacket packet;
+
+				// 유저들에게 라운드 준비를 알림
+				for ( auto& pl : t->room->userSessions )
+				{
+					MainServer::GetInstance().SendPacket( pl->socket, &packet );
+				}
+				TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + READY_TIME, INGAME::TASK_TYPE::ROUND_READY, new INGAME::RoundReadyTask{ t->room, t->room->currentRound } );
+				delete task.second;
+			}
+		}
+		break;
+		case INGAME::TASK_TYPE::ROUND_READY:
+		{
+			INGAME::RoundReadyTask* t = reinterpret_cast<INGAME::RoundReadyTask*>( task.second );
+			if ( t != nullptr )
+			{
+				// 다른 사유로 라운드가 종료되지 않았다면
+				if ( t->currentRound == t->room->currentRound )
+				{
+					PACKET::SERVER_TO_CLIENT::RoundStartPacket packet;
+
+					// 유저들에게 라운드 시작을 알림
+					for ( auto& pl : t->room->userSessions )
+					{
+						MainServer::GetInstance().SendPacket( pl->socket, &packet );
+					}
+
+					TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + GAME_TIME, INGAME::TASK_TYPE::ROUND_END, new INGAME::RoundEndTask{ t->room, t->room->currentRound } );
+				}
+				delete task.second;
+			}
+		}
+		break;
+		case INGAME::TASK_TYPE::ROUND_END:
+		{
+			INGAME::RoundEndTask* t = reinterpret_cast<INGAME::RoundEndTask*>( task.second );
+			if ( t != nullptr )
+			{
+				// 다른 사유로 라운드가 종료되지 않았다면
+				if ( t->currentRound == t->room->currentRound )
+				{
+					// 설정된 라운드가 끝나지 않았다면
+					if ( t->room->currentRound < MAX_ROUND )
+					{
+						t->room->currentRound++;
+
+						PACKET::SERVER_TO_CLIENT::RoundReadyPacket packet;
+
+						// 유저들에게 라운드 준비를 알림
+						for ( auto& pl : t->room->userSessions )
+						{
+							MainServer::GetInstance().SendPacket( pl->socket, &packet );
+						}
+						TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + READY_TIME, INGAME::TASK_TYPE::ROUND_READY, new INGAME::RoundReadyTask{ t->room } );
+					}
+					else
+					{
+						t->room->currentRound++;
+						// 게임 종료 처리 및 방 제거 태스크 등록
+						TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + GAME_TIME, INGAME::TASK_TYPE::ROOM_REMOVE, new INGAME::RemoveRoomTask{ t->room } );
+					}
+					
+				}
+				delete task.second;
+			}
+		}
+		break;
+		case INGAME::TASK_TYPE::ROOM_REMOVE:
+		{
+			INGAME::RemoveRoomTask* t = reinterpret_cast<INGAME::RemoveRoomTask*>( task.second );
+			if ( t != nullptr )
+			{
+				m_rooms.erase( std::remove( m_rooms.begin(), m_rooms.end(), t->room ) );
+				delete (t->room);
+				
+				delete task.second;
+			}
+		}
+		break;
 		}
 	}
 }

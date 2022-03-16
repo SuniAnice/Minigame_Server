@@ -1,6 +1,7 @@
 
 
 #include "TimerManager.h"
+#include "GameManager.h"
 
 TimerManager::TimerManager()
 {
@@ -11,9 +12,9 @@ TimerManager::~TimerManager()
 }
 
 void TimerManager::PushTask( std::chrono::system_clock::time_point time,
-	std::pair<INGAME::TASK_TYPE, void*> task )
+	INGAME::TASK_TYPE type, void* task )
 {
-	m_timerQueue.push( TimerEvent{ time, task } );
+	m_timerQueue.push( TimerEvent{ time, std::make_pair( type, task ) } );
 }
 
 void TimerManager::ThreadFunc()
@@ -34,6 +35,9 @@ void TimerManager::ThreadFunc()
 			m_timerQueue.push( ev );
 			continue;
 		}
+
+		// 시간이 되었다면 전달받은 이벤트를 되돌려줌
+		GameManager::GetInstance().PushTask( ev.task.first, ev.task.second );
 
 	}
 }
