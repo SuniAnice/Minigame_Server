@@ -4,6 +4,7 @@
 #include "MainServer.h"
 #include "LobbyManager.h"
 #include "TimerManager.h"
+#include "LogUtil.h"
 
 
 GameManager::GameManager()
@@ -51,6 +52,7 @@ void GameManager::ThreadFunc()
 				}
 
 				TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + WAIT_TIME, INGAME::TASK_TYPE::ROUND_WAIT, new INGAME::RoundWaitTask{ t->room } );
+				PRINT_LOG("방 생성 요청 받음");
 				delete task.second;
 			}
 		}
@@ -67,6 +69,7 @@ void GameManager::ThreadFunc()
 				// 유저들에게 라운드 준비를 알림
 				BroadCastPacket( t->room, &packet );
 				TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + READY_TIME, INGAME::TASK_TYPE::ROUND_READY, new INGAME::RoundReadyTask{ t->room, t->room->currentRound } );
+				PRINT_LOG( "게임 상태 - 라운드 준비 상태로 전환" );
 				delete task.second;
 			}
 		}
@@ -85,6 +88,7 @@ void GameManager::ThreadFunc()
 					BroadCastPacket( t->room, &packet );
 
 					TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + GAME_TIME, INGAME::TASK_TYPE::ROUND_END, new INGAME::RoundEndTask{ t->room, t->room->currentRound } );
+					PRINT_LOG( "게임 상태 - 라운드 진행 상태로 전환" );
 				}
 				delete task.second;
 			}
@@ -111,6 +115,7 @@ void GameManager::ThreadFunc()
 						BroadCastPacket( t->room, &packet );
 
 						TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + READY_TIME, INGAME::TASK_TYPE::ROUND_READY, new INGAME::RoundReadyTask{ t->room } );
+						PRINT_LOG( "게임 상태 - 다음 라운드 시작됨" );
 					}
 					else
 					{
@@ -157,11 +162,11 @@ void GameManager::BroadCastPacket( GameRoom* room, void* packet )
 
 int GameManager::PickSeeker( GameRoom* room )
 {
-	int temp = rand() % MAX_PLAYER_IN_ROOM + 1;
+	int temp = rand() % MAX_PLAYER_IN_ROOM;
 	// 같은 사람은 술래가 되지 않도록
 	while ( temp == room->currentSeeker )
 	{
-		temp = rand() % MAX_PLAYER_IN_ROOM + 1;
+		temp = rand() % MAX_PLAYER_IN_ROOM;
 	}
 
 	return temp;

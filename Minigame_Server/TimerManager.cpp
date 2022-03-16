@@ -33,6 +33,7 @@ void TimerManager::ThreadFunc()
 		if ( ev.time > std::chrono::system_clock::now() )
 		{
 			m_timerQueue.push( ev );
+			std::this_thread::sleep_for( 10ms );
 			continue;
 		}
 
