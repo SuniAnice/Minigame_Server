@@ -110,6 +110,7 @@ void LobbyManager::ThreadFunc()
 			LOBBY::EnterLobbyTask* t = reinterpret_cast<LOBBY::EnterLobbyTask*>( task.second );
 			if ( t != nullptr )
 			{
+				t->session->roomIndex = -1;
 				for ( auto& pl : m_users )
 				{
 					// 접속 중인 플레이어들의 정보 전송
@@ -132,6 +133,7 @@ void LobbyManager::ThreadFunc()
 			LOBBY::ExitLobbyTask* t = reinterpret_cast<LOBBY::ExitLobbyTask*>( task.second );
 			if ( t != nullptr )
 			{
+				t->session->roomIndex = t->roomNum;
 				PACKET::SERVER_TO_CLIENT::RemovePlayerPacket packet;
 				wmemcpy( packet.nickname, t->session->nickname.c_str(), t->session->nickname.size() );
 				BroadCastLobby( &packet );

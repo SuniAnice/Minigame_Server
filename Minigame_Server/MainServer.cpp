@@ -231,6 +231,18 @@ void MainServer::ProcessPacket( int id, unsigned char* buffer )
 		MatchMaker::GetInstance().PushTask( MATCH::TASK_TYPE::USER_STOPMATCHING, new MATCH::StopMatchingTask{ LobbyManager::GetInstance().GetSession( id ) } );
 	}
 	break;
+	case PACKETINFO::CLIENT_TO_SERVER::MOVEPLAYER:
+	{
+		PACKET::CLIENT_TO_SERVER::PlayerMovePacket* p = reinterpret_cast<PACKET::CLIENT_TO_SERVER::PlayerMovePacket*>( buffer );
+		GameManager::GetInstance().PushTask( INGAME::TASK_TYPE::MOVE_PLAYER, new INGAME::MovePlayerTask{ LobbyManager::GetInstance().GetSession( id ), id, p->x, p->y, p->z, p->angle } );
+	}
+	break;
+	case PACKETINFO::CLIENT_TO_SERVER::ATTACK:
+	{
+		PACKET::CLIENT_TO_SERVER::PlayerAttackPacket* p = reinterpret_cast<PACKET::CLIENT_TO_SERVER::PlayerAttackPacket*>( buffer );
+		GameManager::GetInstance().PushTask( INGAME::TASK_TYPE::ATTACK_PLAYER, new INGAME::AttackPlayerTask{ LobbyManager::GetInstance().GetSession( id ), id } );
+	}
+	break;
 	default:
 	{
 		PRINT_LOG( "알 수 없는 패킷 타입입니다 : " + buffer[ 1 ] );

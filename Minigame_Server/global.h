@@ -60,6 +60,7 @@ struct Session {
 	int key;
 	int prevSize;
 	std::wstring nickname;
+	size_t roomIndex = -1;
 };
 
 // 인게임 유저 정보
@@ -67,6 +68,10 @@ struct UserInfo
 {
 	int userNum;
 	wchar_t nickname[ 10 ] = {};
+	float x;
+	float y;
+	float z;
+	float angle;
 };
 
 struct GameRoom
@@ -116,6 +121,7 @@ namespace LOBBY
 	struct ExitLobbyTask
 	{
 		Session* session;
+		size_t roomNum;
 	};
 }
 
@@ -147,6 +153,8 @@ namespace INGAME
 		ROUND_WAIT,
 		ROUND_READY,
 		ROUND_END,
+		MOVE_PLAYER,
+		ATTACK_PLAYER,
 	};
 
 	struct CreateRoomTask
@@ -175,6 +183,22 @@ namespace INGAME
 	{
 		GameRoom* room;
 	};
+
+	struct MovePlayerTask
+	{
+		Session* session;
+		int index;
+		float x;
+		float y;
+		float z;
+		float angle;
+	};
+
+	struct AttackPlayerTask
+	{
+		Session* session;
+		int index;
+	};
 }
 
 struct TimerEvent
@@ -200,6 +224,8 @@ namespace PACKETINFO
 		GAMEMATCHED,
 		ROUNDREADY,
 		ROUNDSTART,
+		MOVEPLAYER,
+		ATTACK,
 	};
 
 	enum class CLIENT_TO_SERVER : unsigned char
@@ -208,6 +234,8 @@ namespace PACKETINFO
 		LOBBYCHAT,
 		STARTMATCHING,
 		STOPMATCHING,
+		MOVEPLAYER,
+		ATTACK,
 	};
 }
 
@@ -270,6 +298,24 @@ namespace PACKET
 			unsigned char size = sizeof( RoundStartPacket );
 			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::ROUNDSTART;
 		};
+
+		struct MovePlayerPacket
+		{
+			unsigned char size = sizeof( MovePlayerPacket );
+			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::MOVEPLAYER;
+			int index;
+			float x;
+			float y;
+			float z;
+			float angle;
+		};
+
+		struct AttackPlayerPacket
+		{
+			unsigned char size = sizeof( AttackPlayerPacket );
+			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::ATTACK;
+			int index;
+		};
 	}
 
 	namespace CLIENT_TO_SERVER
@@ -298,6 +344,22 @@ namespace PACKET
 		{
 			unsigned char size = sizeof( StopMatchingPacket );
 			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::STOPMATCHING;
+		};
+
+		struct PlayerMovePacket
+		{
+			unsigned char size = sizeof( PlayerMovePacket );
+			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::MOVEPLAYER;
+			float x;
+			float y;
+			float z;
+			float angle;
+		};
+
+		struct PlayerAttackPacket
+		{
+			unsigned char size = sizeof( PlayerAttackPacket );
+			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::ATTACK;
 		};
 	}
 }

@@ -48,7 +48,7 @@ void GameManager::ThreadFunc()
 				// 로비에서 플레이어 제거
 				for ( auto& pl : t->room->userSessions )
 				{
-					LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_EXITLOBBY, new LOBBY::ExitLobbyTask{ pl } );
+					LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_EXITLOBBY, new LOBBY::ExitLobbyTask{ pl, m_rooms.size() } );
 				}
 
 				TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + WAIT_TIME, INGAME::TASK_TYPE::ROUND_WAIT, new INGAME::RoundWaitTask{ t->room } );
@@ -150,6 +150,40 @@ void GameManager::ThreadFunc()
 			}
 		}
 		break;
+		case INGAME::TASK_TYPE::MOVE_PLAYER:
+		{
+			INGAME::MovePlayerTask* t = reinterpret_cast<INGAME::MovePlayerTask*>( task.second );
+			if ( t != nullptr )
+			{
+				PACKET::SERVER_TO_CLIENT::MovePlayerPacket packet;
+				packet.index = t->index;
+				m_rooms[ t->session->roomIndex ]->userInfo[ t->index ].x = packet.x = t->x;
+				m_rooms[ t->session->roomIndex ]->userInfo[ t->index ].y = packet.y = t->y;
+				m_rooms[ t->session->roomIndex ]->userInfo[ t->index ].z = packet.z = t->z;
+				m_rooms[ t->session->roomIndex ]->userInfo[ t->index ].angle = packet.angle = t->angle;
+
+				// 움직인 플레이어를 제외하고 전송
+				BroadCastPacketExceptMe( m_rooms[ t->session->roomIndex ], &packet, t->index );
+
+				delete task.second;
+			}
+		}
+		break;
+		case INGAME::TASK_TYPE::ATTACK_PLAYER:
+		{
+			INGAME::AttackPlayerTask* t = reinterpret_cast<INGAME::AttackPlayerTask*>( task.second );
+			if ( t != nullptr )
+			{
+				PACKET::SERVER_TO_CLIENT::AttackPlayerPacket packet;
+				packet.index = t->index;
+
+				// 움직인 플레이어를 제외하고 전송
+				BroadCastPacketExceptMe( m_rooms[ t->session->roomIndex ], &packet, t->index );
+
+				delete task.second;
+			}
+		}
+		break;
 		}
 	}
 }
@@ -158,6 +192,15 @@ void GameManager::BroadCastPacket( GameRoom* room, void* packet )
 {
 	for ( auto& pl : room->userSessions )
 	{
+		MainServer::GetInstance().SendPacket( pl->socket, packet );
+	}
+}
+
+void GameManager::BroadCastPacketExceptMe( GameRoom* room, void* packet, int index )
+{
+	for ( auto& pl : room->userSessions )
+	{
+		if ( pl->key == index ) continue;
 		MainServer::GetInstance().SendPacket( pl->socket, packet );
 	}
 }

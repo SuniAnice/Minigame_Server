@@ -19,5 +19,7 @@ private:
 
 	void BroadCastPacket( GameRoom* room, void* packet );
 
+	void BroadCastPacketExceptMe( GameRoom* room, void* packet, int index );
+
 	int PickSeeker( GameRoom* room );
 };
