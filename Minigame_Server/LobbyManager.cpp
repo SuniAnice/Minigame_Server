@@ -105,6 +105,42 @@ void LobbyManager::ThreadFunc()
 			}
 		}
 		break;
+		case LOBBY::TASK_TYPE::USER_ENTERLOBBY:
+		{
+			LOBBY::EnterLobbyTask* t = reinterpret_cast<LOBBY::EnterLobbyTask*>( task.second );
+			if ( t != nullptr )
+			{
+				for ( auto& pl : m_users )
+				{
+					// 접속 중인 플레이어들의 정보 전송
+					if ( pl.second->nickname.size() != 0 && pl.second->nickname != t->session->nickname )
+					{
+						PACKET::SERVER_TO_CLIENT::AddPlayerPacket plpacket;
+						wmemcpy( plpacket.nickname, m_users[ pl.first ]->nickname.c_str(), m_users[ pl.first ]->nickname.size() );
+						MainServer::GetInstance().SendPacket( t->session->socket, &plpacket );
+					}
+				}
+				PACKET::SERVER_TO_CLIENT::AddPlayerPacket packet;
+				wmemcpy( packet.nickname, t->session->nickname.c_str(), t->session->nickname.size() );
+				BroadCastLobby( &packet );
+				delete task.second;
+			}
+		}
+		break;
+		case LOBBY::TASK_TYPE::USER_EXITLOBBY:
+		{
+			LOBBY::ExitLobbyTask* t = reinterpret_cast<LOBBY::ExitLobbyTask*>( task.second );
+			if ( t != nullptr )
+			{
+				PACKET::SERVER_TO_CLIENT::RemovePlayerPacket packet;
+				wmemcpy( packet.nickname, t->session->nickname.c_str(), t->session->nickname.size() );
+				BroadCastLobby( &packet );
+
+				m_users.erase( t->session->key );
+				delete task.second;
+			}
+		}
+		break;
 		}
 	}
 }

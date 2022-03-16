@@ -2,6 +2,7 @@
 
 #include "GameManager.h"
 #include "MainServer.h"
+#include "LobbyManager.h"
 #include "TimerManager.h"
 
 
@@ -42,6 +43,13 @@ void GameManager::ThreadFunc()
 					wmemcpy( packet.users[ i ].nickname, t->room->userSessions[ i ]->nickname.c_str(), t->room->userSessions[ i ]->nickname.size() );
 				}
 				BroadCastPacket( t->room, &packet );
+
+				// 로비에서 플레이어 제거
+				for ( auto& pl : t->room->userSessions )
+				{
+					LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_EXITLOBBY, new LOBBY::ExitLobbyTask{ pl } );
+				}
+
 				TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + WAIT_TIME, INGAME::TASK_TYPE::ROUND_WAIT, new INGAME::RoundWaitTask{ t->room } );
 				delete task.second;
 			}
@@ -107,6 +115,13 @@ void GameManager::ThreadFunc()
 					else
 					{
 						t->room->currentRound++;
+
+						// 로비에 플레이어 등록
+						for ( auto& pl : t->room->userSessions )
+						{
+							LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_ENTERLOBBY, new LOBBY::EnterLobbyTask{ pl } );
+						}
+
 						// 게임 종료 처리 및 방 제거 태스크 등록
 						TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + GAME_TIME, INGAME::TASK_TYPE::ROOM_REMOVE, new INGAME::RemoveRoomTask{ t->room } );
 					}

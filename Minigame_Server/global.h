@@ -91,6 +91,9 @@ namespace LOBBY
 
 		USER_STARTMATCHING,
 		USER_STOPMATCHING,
+
+		USER_ENTERLOBBY,
+		USER_EXITLOBBY,
 	};
 
 	struct LoginTask
@@ -103,6 +106,16 @@ namespace LOBBY
 	{
 		int id;
 		std::wstring message;
+	};
+
+	struct EnterLobbyTask
+	{
+		Session* session;
+	};
+
+	struct ExitLobbyTask
+	{
+		Session* session;
 	};
 }
 
@@ -195,7 +208,6 @@ namespace PACKETINFO
 		LOBBYCHAT,
 		STARTMATCHING,
 		STOPMATCHING,
-		GAMEREADY,
 	};
 }
 
@@ -286,12 +298,6 @@ namespace PACKET
 		{
 			unsigned char size = sizeof( StopMatchingPacket );
 			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::STOPMATCHING;
-		};
-
-		struct GameReadyPacket
-		{
-			unsigned char size = sizeof( GameReadyPacket );
-			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::GAMEREADY;
 		};
 	}
 }
