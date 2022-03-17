@@ -5,6 +5,7 @@
 #include "LobbyManager.h"
 #include "TimerManager.h"
 #include "LogUtil.h"
+#include <cmath>
 
 
 GameManager::GameManager()
@@ -208,6 +209,27 @@ void GameManager::ThreadFunc()
 
 					// 공격한 플레이어를 제외하고 전송
 					BroadCastPacketExceptMe( m_rooms[ t->session->roomIndex ], &packet, t->index );
+
+					for ( auto& pl : m_rooms[ t->session->roomIndex ]->userInfo )
+					{
+						if ( pl.first == t->index ) continue;
+						// 거리 검사
+						double dx = pl.second.x - user.x;
+						double dy = pl.second.y - user.y;
+						double distance = sqrt( pow( dx, 2 ) + pow( dy, 2 ) );
+						if ( distance < ATTACK_RANGE )
+						{
+							// x축과 이루는 각 계산
+							auto angle = asin( dy / ( sqrt( pow( pl.second.x, 2 ) + pow( pl.second.y, 2 ) ) + 1 ) );
+							if ( angle <= user.angle + ATTACK_ANGLE && angle >= user.angle - ATTACK_ANGLE )
+							{
+								PACKET::SERVER_TO_CLIENT::KillPlayerPacket p;
+								p.killer = t->index;
+								p.victim = pl.second.userNum;
+								BroadCastPacket( m_rooms[ t->session->roomIndex ], &p );
+							}
+						}
+					}
 				}
 
 				delete task.second;
