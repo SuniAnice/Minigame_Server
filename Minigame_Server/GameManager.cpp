@@ -215,6 +215,7 @@ void GameManager::ThreadFunc()
 					for ( auto& pl : m_rooms[ t->session->roomIndex ]->userInfo )
 					{
 						if ( pl.first == t->index ) continue;
+						if ( !pl.second.isAlive ) continue;
 						// 거리 검사
 						double dx = pl.second.x - user.x;
 						double dy = pl.second.y - user.y;
@@ -233,8 +234,18 @@ void GameManager::ThreadFunc()
 								PACKET::SERVER_TO_CLIENT::KillPlayerPacket p;
 								p.killer = t->index;
 								p.victim = pl.second.userNum;
+								pl.second.isAlive = false;
+								m_rooms[ t->session->roomIndex ]->aliveHider -= 1;
+
 								BroadCastPacket( m_rooms[ t->session->roomIndex ], &p );
 								PRINT_LOG( "공격 성공 패킷 전송됨" );
+
+								if ( m_rooms[ t->session->roomIndex ]->aliveHider == 0 )
+								{
+									// 새로운 라운드 시작
+									TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + INTERVAL_TIME, INGAME::TASK_TYPE::ROUND_END,
+										new INGAME::RoundEndTask{ m_rooms[ t->session->roomIndex ], m_rooms[ t->session->roomIndex ]->currentRound } );
+								}
 							}
 						}
 					}

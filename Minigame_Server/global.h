@@ -29,6 +29,7 @@ constexpr size_t MAX_USER = 100000;			// 최대 동접자
 constexpr seconds WAIT_TIME = 10s;			// 라운드 대기 시간
 constexpr seconds READY_TIME = 30s;			// 라운드 준비 시간
 constexpr seconds GAME_TIME = 180s;			// 라운드 진행 시간
+constexpr seconds INTERVAL_TIME = 5s;		// 라운드 종료 인터벌
 constexpr double ATTACK_RANGE = 300;		// 공격 사정거리
 constexpr double ATTACK_ANGLE = 45;			// 공격 각도
 
