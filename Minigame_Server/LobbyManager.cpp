@@ -1,5 +1,6 @@
 
 
+#include "AutoCall.hpp"
 #include "LobbyManager.h"
 #include "LogUtil.h"
 #include "MainServer.h"
@@ -44,6 +45,7 @@ void LobbyManager::ThreadFunc()
 			Lobby::LoginTask* t = reinterpret_cast< Lobby::LoginTask* >( task.second );
 			if ( t != nullptr )
 			{
+				Base::AutoCall defer( [ &t ]() { delete t; } );
 				if ( !m_usernames.count( t->m_nickname ) )
 				{
 					m_usernames.insert( t->m_nickname );
@@ -76,8 +78,6 @@ void LobbyManager::ThreadFunc()
 					MainServer::GetInstance().SendPacket( m_users[ t->m_id ]->m_socket, &packet );
 					PRINT_LOG( "유저 로그인 실패 - 아이디 중복" );
 				}
-				
-				delete task.second;
 			}
 		}
 			break;
@@ -86,11 +86,11 @@ void LobbyManager::ThreadFunc()
 			Lobby::ChatTask* t = reinterpret_cast<Lobby::ChatTask*>( task.second );
 			if ( t != nullptr )
 			{
+				Base::AutoCall defer( [&t]() { delete t; } );
 				Packet::ServerToClient::LobbyChatPacket packet;
 				wmemcpy( packet.m_nickname, m_users[ t->m_id ]->m_nickname.c_str(), m_users[ t->m_id ]->m_nickname.size() );
 				wmemcpy( packet.m_message, t->m_message.c_str(), t->m_message.size() );
 				_BroadCastLobby( &packet );
-				delete task.second;
 			}
 		}
 		break;
@@ -140,6 +140,7 @@ void LobbyManager::ThreadFunc()
 			Lobby::EnterLobbyTask* t = reinterpret_cast<Lobby::EnterLobbyTask*>( task.second );
 			if ( t->m_session != nullptr )
 			{
+				Base::AutoCall defer( [&t]() { delete t; } );
 				t->m_session->m_roomIndex = -1;
 				for ( auto& pl : m_users )
 				{
@@ -154,7 +155,6 @@ void LobbyManager::ThreadFunc()
 				Packet::ServerToClient::AddPlayerPacket packet;
 				wmemcpy( packet.m_nickname, t->m_session->m_nickname.c_str(), t->m_session->m_nickname.size() );
 				_BroadCastLobby( &packet );
-				delete task.second;
 			}
 		}
 		break;
@@ -163,13 +163,13 @@ void LobbyManager::ThreadFunc()
 			Lobby::ExitLobbyTask* t = reinterpret_cast<Lobby::ExitLobbyTask*>( task.second );
 			if ( t->m_session != nullptr )
 			{
+				Base::AutoCall defer( [&t]() { delete t; } );
 				t->m_session->m_roomIndex = t->m_roomNum;
 
 				Packet::ServerToClient::RemovePlayerPacket packet;
 				wmemcpy( packet.m_nickname, t->m_session->m_nickname.c_str(), t->m_session->m_nickname.size() );
 
 				_BroadCastLobby( &packet );
-				delete task.second;
 			}
 		}
 		break;

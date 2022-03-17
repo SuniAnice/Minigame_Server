@@ -1,5 +1,6 @@
 
 
+#include "AutoCall.hpp"
 #include "GameManager.h"
 #include "MainServer.h"
 #include "MatchMaker.h"

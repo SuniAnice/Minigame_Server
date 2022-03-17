@@ -1,5 +1,6 @@
 
 
+#include "AutoCall.hpp"
 #include "GameManager.h"
 #include "MainServer.h"
 #include "LobbyManager.h"
@@ -37,6 +38,7 @@ void GameManager::ThreadFunc()
 			INGAME::CreateRoomTask* t = reinterpret_cast< INGAME::CreateRoomTask* >( task.second );
 			if ( t->m_room != nullptr )
 			{
+				Base::AutoCall defer( [&t]() { delete t; } );
 				unsigned int roomNum = _GetNewRoomNum();
 				m_rooms[ roomNum ] = ( t->m_room );
 				m_rooms[ roomNum ]->m_roomNum = roomNum;
@@ -58,7 +60,6 @@ void GameManager::ThreadFunc()
 				TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + WAIT_TIME, INGAME::ETaskType::RoundWait,
 					new INGAME::RoundWaitTask{ t->m_room } );
 				PRINT_LOG("방 생성 요청 받음");
-				delete task.second;
 			}
 		}
 			break;
@@ -67,6 +68,7 @@ void GameManager::ThreadFunc()
 			INGAME::RoundWaitTask* t = reinterpret_cast<INGAME::RoundWaitTask*>( task.second );
 			if ( t->m_room != nullptr )
 			{
+				Base::AutoCall defer( [&t]() { delete t; } );
 				Packet::ServerToClient::RoundReadyPacket packet;
 				int picked = _PickSeeker( t->m_room );
 
@@ -83,7 +85,6 @@ void GameManager::ThreadFunc()
 				TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + READY_TIME, INGAME::ETaskType::RoundReady,
 					new INGAME::RoundReadyTask{ t->m_room, t->m_room->m_currentRound } );
 				PRINT_LOG( "게임 상태 - 라운드 준비 상태로 전환" );
-				delete task.second;
 			}
 		}
 		break;
@@ -92,6 +93,7 @@ void GameManager::ThreadFunc()
 			INGAME::RoundReadyTask* t = reinterpret_cast<INGAME::RoundReadyTask*>( task.second );
 			if ( t->m_room != nullptr )
 			{
+				Base::AutoCall defer( [&t]() { delete t; } );
 				// 다른 사유로 라운드가 종료되지 않았다면
 				if ( t->m_currentRound == t->m_room->m_currentRound )
 				{
@@ -109,7 +111,6 @@ void GameManager::ThreadFunc()
 						new INGAME::RoundEndTask{ t->m_room, t->m_room->m_currentRound } );
 					PRINT_LOG( "게임 상태 - 라운드 진행 상태로 전환" );
 				}
-				delete task.second;
 			}
 		}
 		break;
@@ -118,6 +119,7 @@ void GameManager::ThreadFunc()
 			INGAME::RoundEndTask* t = reinterpret_cast<INGAME::RoundEndTask*>( task.second );
 			if ( t->m_room != nullptr )
 			{
+				Base::AutoCall defer( [&t]() { delete t; } );
 				// 다른 사유로 라운드가 종료되지 않았다면
 				if ( t->m_currentRound == t->m_room->m_currentRound )
 				{
@@ -166,7 +168,6 @@ void GameManager::ThreadFunc()
 					}
 					
 				}
-				delete task.second;
 			}
 		}
 		break;
@@ -175,11 +176,11 @@ void GameManager::ThreadFunc()
 			INGAME::RemoveRoomTask* t = reinterpret_cast<INGAME::RemoveRoomTask*>( task.second );
 			if ( t->m_room != nullptr )
 			{
+				Base::AutoCall defer( [&t]() { delete t; } );
 				m_rooms.erase( t->m_room->m_roomNum );
 				delete ( t->m_room );
 				PRINT_LOG( "방 제거 요청 받음" );
 
-				delete task.second;
 			}
 		}
 		break;
@@ -188,6 +189,7 @@ void GameManager::ThreadFunc()
 			INGAME::MovePlayerTask* t = reinterpret_cast<INGAME::MovePlayerTask*>( task.second );
 			if ( t->m_session != nullptr )
 			{
+				Base::AutoCall defer( [&t]() { delete t; } );
 				if ( t->m_session->m_roomIndex != -1 )
 				{
 					auto& user = m_rooms[ t->m_session->m_roomIndex ]->m_userInfo[ t->m_index ];
@@ -205,7 +207,6 @@ void GameManager::ThreadFunc()
 					}
 				}
 
-				delete task.second;
 			}
 		}
 		break;
@@ -214,6 +215,7 @@ void GameManager::ThreadFunc()
 			INGAME::AttackPlayerTask* t = reinterpret_cast<INGAME::AttackPlayerTask*>( task.second );
 			if ( t->m_session != nullptr )
 			{
+				Base::AutoCall defer( [&t]() { delete t; } );
 				if ( t->m_session->m_roomIndex != -1 )
 				{
 					auto& user = m_rooms[ t->m_session->m_roomIndex ]->m_userInfo[ t->m_index ];
@@ -264,7 +266,6 @@ void GameManager::ThreadFunc()
 						}
 					}
 				}
-				delete task.second;
 			}
 		}
 		break;
@@ -273,6 +274,7 @@ void GameManager::ThreadFunc()
 			INGAME::RemovePlayerTask* t = reinterpret_cast<INGAME::RemovePlayerTask*>( task.second );
 			if ( t->m_session != nullptr )
 			{
+				Base::AutoCall defer( [&t]() { delete t; } );
 				if ( t->m_session->m_roomIndex != -1 )
 				{
 					m_rooms[ t->m_roomindex ]->m_userInfo.erase( t->m_index );
@@ -284,7 +286,6 @@ void GameManager::ThreadFunc()
 
 					_BroadCastPacket( m_rooms[ t->m_roomindex ], &packet );
 				}
-				delete task.second;
 			}
 		}
 		break;

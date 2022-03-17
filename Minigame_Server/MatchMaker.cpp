@@ -1,5 +1,6 @@
 
 
+#include "AutoCall.hpp"
 #include "GameManager.h"
 #include "MatchMaker.h"
 #include "LogUtil.h"
@@ -27,6 +28,7 @@ void MatchMaker::ThreadFunc()
 			Match::StartMatchingTask* t = reinterpret_cast< Match::StartMatchingTask* >( task.second );
 			if ( t->m_session != nullptr )
 			{
+				Base::AutoCall defer( [&t]() { delete t; } );
 				m_matchingUser.emplace_back( t->m_session );
 				t->m_session->m_isMatching = true;
 				// 최대 인원수만큼의 플레이어가 존재한다면
@@ -48,7 +50,6 @@ void MatchMaker::ThreadFunc()
 					GameManager::GetInstance().PushTask( INGAME::ETaskType::RoomCreate, new INGAME::CreateRoomTask{ room } );
 				}
 				PRINT_LOG( t->m_session->m_key + "번 플레이어 매칭 시작" );
-				delete task.second;
 			}
 		}
 			break;
@@ -57,10 +58,10 @@ void MatchMaker::ThreadFunc()
 			Match::StopMatchingTask* t = reinterpret_cast< Match::StopMatchingTask* >( task.second );
 			if ( t->m_session != nullptr )
 			{
+				Base::AutoCall defer( [&t]() { delete t; } );
 				t->m_session->m_isMatching = false;
 				m_matchingUser.remove( t->m_session );
 				PRINT_LOG( t->m_session->m_key + "번 플레이어 매칭 취소" );
-				delete task.second;
 			}
 		}
 		break;
@@ -69,6 +70,7 @@ void MatchMaker::ThreadFunc()
 			Match::RemovePlayerTask* t = reinterpret_cast<Match::RemovePlayerTask*>( task.second );
 			if ( t->m_session != nullptr )
 			{
+				Base::AutoCall defer( [&t]() { delete t; } );
 				if ( std::find( m_matchingUser.begin(), m_matchingUser.end(), t->m_session ) != m_matchingUser.end() )
 				{
 					// 큐에 있다면 삭제
@@ -83,7 +85,6 @@ void MatchMaker::ThreadFunc()
 						new INGAME::RemovePlayerTask{ t->m_session->m_roomIndex, t->m_session->m_key, t->m_session } );
 
 				}
-				delete task.second;
 			}
 		}
 		break;
