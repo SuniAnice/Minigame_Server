@@ -219,16 +219,22 @@ void GameManager::ThreadFunc()
 						double dx = pl.second.x - user.x;
 						double dy = pl.second.y - user.y;
 						double distance = sqrt( pow( dx, 2 ) + pow( dy, 2 ) );
+
 						if ( distance < ATTACK_RANGE )
 						{
-							// x축과 이루는 각 계산
-							auto angle = asin( dy / ( sqrt( pow( pl.second.x, 2 ) + pow( pl.second.y, 2 ) ) + 1 ) );
-							if ( angle <= user.angle + ATTACK_ANGLE && angle >= user.angle - ATTACK_ANGLE )
+							dx = dx / distance;
+							dy = dy / distance;
+							double x = cos( ( user.angle ) * 3.14 / 180 );
+							double y = sin( ( user.angle ) * 3.14 / 180 );
+							// 공격자의 방향 벡터와 각 물체까지의 방향벡터의 사잇각 계산
+							double angle = atan2( x * dy - dx * y, dx * x + dy * y ) * 180 / 3.14;
+							if ( angle <= ATTACK_ANGLE && angle >= -ATTACK_ANGLE )
 							{
 								PACKET::SERVER_TO_CLIENT::KillPlayerPacket p;
 								p.killer = t->index;
 								p.victim = pl.second.userNum;
 								BroadCastPacket( m_rooms[ t->session->roomIndex ], &p );
+								PRINT_LOG( "공격 성공 패킷 전송됨" );
 							}
 						}
 					}
