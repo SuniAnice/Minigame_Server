@@ -9,7 +9,7 @@
 #include <iostream>
 
 
-MainServer::MainServer() : listenSocket(), hIOCP( nullptr )
+MainServer::MainServer() : m_listenSocket(), m_hIOCP( nullptr )
 {
 	setlocale( LC_ALL, "korean" );
 	std::wcout.imbue( std::locale( "korean" ) );
@@ -17,11 +17,11 @@ MainServer::MainServer() : listenSocket(), hIOCP( nullptr )
 
 MainServer::~MainServer()
 {
-	closesocket( listenSocket );
+	closesocket( m_listenSocket );
 	WSACleanup();
 }
 
-void MainServer::Init()
+void MainServer::_Init()
 {
 	WSADATA wsa;
 	if ( WSAStartup( MAKEWORD( 2, 2 ), &wsa) != 0 )
@@ -29,19 +29,19 @@ void MainServer::Init()
 		PRINT_LOG( "WSAStartup" );
 	}
 
-	hIOCP = CreateIoCompletionPort( INVALID_HANDLE_VALUE, NULL, 0, 0 );
-	if ( hIOCP == NULL )
+	m_hIOCP = CreateIoCompletionPort( INVALID_HANDLE_VALUE, NULL, 0, 0 );
+	if ( m_hIOCP == NULL )
 	{
 		PRINT_LOG( "CreateIoCompletionPort" );
 	}
 
-	listenSocket = WSASocket( AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED );
-	if ( listenSocket == INVALID_SOCKET )
+	m_listenSocket = WSASocket( AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED );
+	if ( m_listenSocket == INVALID_SOCKET )
 	{
 		PRINT_LOG( "Socket" );
 	}
 
-	CreateIoCompletionPort( reinterpret_cast< HANDLE >( listenSocket ), hIOCP, 0, 0 );
+	CreateIoCompletionPort( reinterpret_cast< HANDLE >( m_listenSocket ), m_hIOCP, 0, 0 );
 
 	SOCKADDR_IN serverAddr;
 	ZeroMemory( &serverAddr, sizeof( serverAddr ) );
@@ -50,14 +50,14 @@ void MainServer::Init()
 	serverAddr.sin_port = htons( PORT );
 
 
-	if ( ::bind( listenSocket, (SOCKADDR*)&serverAddr, sizeof( serverAddr ) ) == SOCKET_ERROR )
+	if ( ::bind( m_listenSocket, (SOCKADDR*)&serverAddr, sizeof( serverAddr ) ) == SOCKET_ERROR )
 	{
 		PRINT_LOG( "Bind" );
 	}
 
 
 
-	if ( listen( listenSocket, SOMAXCONN ) == SOCKET_ERROR )
+	if ( listen( m_listenSocket, SOMAXCONN ) == SOCKET_ERROR )
 	{
 		PRINT_LOG( "Listen" );
 	}
@@ -65,9 +65,9 @@ void MainServer::Init()
 	// 스레드 생성
 	for ( int i = 0; i < WORKER_THREADS; i++ )
 	{
-		workerThreads.emplace_back( [&]() 
+		m_workerThreads.emplace_back( [&]() 
 			{
-				this->WorkerFunc();
+				this->_WorkerFunc();
 			} );
 	}
 
@@ -81,35 +81,35 @@ void MainServer::Init()
 
 void MainServer::Run()
 {
-	Init();
+	_Init();
 
-	OVERLAPPED_EXTENDED *over = new OVERLAPPED_EXTENDED;
-	over->opType = OP_TYPE::OP_ACCEPT;
-	memset( &over->overlapped, 0, sizeof( over->overlapped ) );
+	OverlappedExtended *over = new OverlappedExtended;
+	over->m_opType = EOpType::Accept;
+	memset( &over->m_overlapped, 0, sizeof( over->m_overlapped ) );
 	SOCKET c_socket = WSASocket( AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED );
-	over->socket = c_socket;
-	BOOL ret = AcceptEx( listenSocket, c_socket, over->packetBuffer, 0, 32, 32, NULL, &over->overlapped );
+	over->m_socket = c_socket;
+	BOOL ret = AcceptEx( m_listenSocket, c_socket, over->m_packetBuffer, 0, 32, 32, NULL, &over->m_overlapped );
 
-	LobbyManager::GetInstance().SetHandle( hIOCP );
+	LobbyManager::GetInstance().SetHandle( m_hIOCP );
 
-	for ( auto& th : workerThreads )
+	for ( auto& th : m_workerThreads )
 	{
 		th.join();
 	}
 }
 
-void MainServer::WorkerFunc()
+void MainServer::_WorkerFunc()
 {
 	while ( true )
 	{
-		DWORD bytes_recved;
-		ULONG_PTR ikey;
+		DWORD bytesReceived;
+		ULONG_PTR iKey;
 		WSAOVERLAPPED* over;
 
-		BOOL ret = GetQueuedCompletionStatus( hIOCP, &bytes_recved, &ikey, &over, INFINITE );
-		int key = static_cast<int>( ikey );
+		BOOL ret = GetQueuedCompletionStatus( m_hIOCP, &bytesReceived, &iKey, &over, INFINITE );
+		int key = static_cast<int>( iKey );
 
-		OVERLAPPED_EXTENDED* overEx = reinterpret_cast<OVERLAPPED_EXTENDED*>( over );
+		OverlappedExtended* overEx = reinterpret_cast< OverlappedExtended* >( over );
 
 		if ( FALSE == ret ) {
 			if ( 0 == key ) {
@@ -119,72 +119,72 @@ void MainServer::WorkerFunc()
 			{
 				PRINT_LOG( "GQCS" );
 				// 로그아웃 처리
-				LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_LOGOUT, &key );
+				LobbyManager::GetInstance().PushTask( Lobby::ETaskType::UserLogout, &key );
 				continue;
 			}
 		}
-		if ( key != 0 && bytes_recved == 0 )
+		if ( key != 0 && bytesReceived == 0 )
 		{
 			// 로그아웃 처리
-			LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_LOGOUT, &key );
+			LobbyManager::GetInstance().PushTask( Lobby::ETaskType::UserLogout, &key );
 			continue;
 		}
 
-		switch ( overEx->opType )
+		switch ( overEx->m_opType )
 		{
-		case OP_TYPE::OP_RECV:
+		case EOpType::Recv:
 		{
 			Session* session = LobbyManager::GetInstance().GetSession( key );
 			if ( session == nullptr ) continue;
-			unsigned char* packet_ptr = overEx->packetBuffer;
-			int data_bytes = bytes_recved + session->prevSize;
-			int packet_size = packet_ptr[ 0 ];
+			unsigned char* packetPtr = overEx->m_packetBuffer;
+			int dataBytes = bytesReceived + session->m_prevSize;
+			int packetSize = packetPtr[ 0 ];
 
-			while ( data_bytes >= packet_size )
+			while ( dataBytes >= packetSize )
 			{
-				ProcessPacket( key, packet_ptr );
-				data_bytes -= packet_size;
-				packet_ptr += packet_size;
-				if ( 0 >= data_bytes )	break;
-				packet_size = packet_ptr[ 0 ];
-				if ( packet_size <= 0 || packet_size >= BUFFER_SIZE )
+				_ProcessPacket( key, packetPtr );
+				dataBytes -= packetSize;
+				packetPtr += packetSize;
+				if ( 0 >= dataBytes )	break;
+				packetSize = packetPtr[ 0 ];
+				if ( packetSize <= 0 || packetSize >= BUFFER_SIZE )
 				{
 					// 비정상 패킷 수신
-					ZeroMemory( overEx->packetBuffer, BUFFER_SIZE );
+					ZeroMemory( overEx->m_packetBuffer, BUFFER_SIZE );
 				}
 			}
 
-			session->prevSize = data_bytes;
-			if ( data_bytes > 0 )
+			session->m_prevSize = dataBytes;
+			if ( dataBytes > 0 )
 			{
-				memcpy( overEx->packetBuffer, packet_ptr, data_bytes );
+				memcpy( overEx->m_packetBuffer, packetPtr, dataBytes );
 			}
 
 			DoRecv( session );
 		}
 			break;
-		case OP_TYPE::OP_SEND:
+		case EOpType::Send:
 		{
 			delete overEx;
 		}
 			break;
-		case OP_TYPE::OP_ACCEPT:
+		case EOpType::Accept:
 		{
-			LobbyManager::GetInstance().PushTask(LOBBY::TASK_TYPE::USER_ACCEPT, overEx );
+			LobbyManager::GetInstance().PushTask( Lobby::ETaskType::UserAccept, overEx );
 
-			OVERLAPPED_EXTENDED* new_over = new OVERLAPPED_EXTENDED;
+			OverlappedExtended* newOver = new OverlappedExtended;
 			SOCKET cSock = WSASocket( AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED );
-			new_over->socket = cSock;
-			new_over->opType = OP_TYPE::OP_ACCEPT;
-			memset( &new_over->overlapped, 0, sizeof( new_over->overlapped ) );
-			AcceptEx( listenSocket, cSock, new_over->packetBuffer, 0, 32, 32, NULL, &new_over->overlapped );
+			newOver->m_socket = cSock;
+			newOver->m_opType = EOpType::Accept;
+			memset( &newOver->m_overlapped, 0, sizeof( newOver->m_overlapped ) );
+			AcceptEx( m_listenSocket, cSock, newOver->m_packetBuffer, 0, 32, 32, NULL, &newOver->m_overlapped );
 		}
 			break;
 		default:
 		{
 			PRINT_LOG( "잘못된 Operation Type입니다");
 			// 로그아웃 처리
-			LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_LOGOUT, &key );
+			LobbyManager::GetInstance().PushTask( Lobby::ETaskType::UserLogout, &key );
 			continue;
 		}
 			break;
@@ -194,66 +194,82 @@ void MainServer::WorkerFunc()
 
 void MainServer::SendPacket( SOCKET& target, void* p )
 {
-	int p_size = reinterpret_cast<unsigned char*>( p )[ 0 ];
-	OVERLAPPED_EXTENDED* overlapped = new OVERLAPPED_EXTENDED;
-	overlapped->opType = OP_TYPE::OP_SEND;
-	memset( &overlapped->overlapped, 0, sizeof( overlapped->overlapped ) );
-	memcpy( &overlapped->packetBuffer, p, p_size );
-	overlapped->wsaBuf.buf = reinterpret_cast<char*>( overlapped->packetBuffer );
-	overlapped->wsaBuf.len = p_size;
+	int p_size = reinterpret_cast< unsigned char* >( p )[ 0 ];
+	OverlappedExtended* m_overlapped = new OverlappedExtended;
+	m_overlapped->m_opType = EOpType::Send;
+	memset( &m_overlapped->m_overlapped, 0, sizeof( m_overlapped->m_overlapped ) );
+	memcpy( &m_overlapped->m_packetBuffer, p, p_size );
+	m_overlapped->m_wsaBuf.buf = reinterpret_cast<char*>( m_overlapped->m_packetBuffer );
+	m_overlapped->m_wsaBuf.len = p_size;
 
-	int ret = WSASend( target, &( overlapped->wsaBuf ), 1, NULL, 0, &overlapped->overlapped, NULL );
+	int ret = WSASend( target, &( m_overlapped->m_wsaBuf ),
+		1, NULL, 0, &m_overlapped->m_overlapped, NULL );
 }
 
 void MainServer::DoRecv( Session* session )
 {
-	session->overlapped.wsaBuf.buf = reinterpret_cast<char*>( session->overlapped.packetBuffer ) + session->prevSize;
-	session->overlapped.wsaBuf.len = BUFFER_SIZE - session->prevSize;
-	memset( &session->overlapped.overlapped, 0, sizeof( session->overlapped.overlapped ) );
+	session->m_overlapped.m_wsaBuf.buf = 
+		reinterpret_cast< char* >( session->m_overlapped.m_packetBuffer ) + session->m_prevSize;
+	session->m_overlapped.m_wsaBuf.len = BUFFER_SIZE - session->m_prevSize;
+	memset( &session->m_overlapped.m_overlapped, 0,
+		sizeof( session->m_overlapped.m_overlapped ) );
 
-	DWORD r_flag = 0;
-	int ret = WSARecv( session->socket, &session->overlapped.wsaBuf, 1, NULL, &r_flag, &session->overlapped.overlapped, NULL );
+	DWORD rFlag = 0;
+	int ret = WSARecv( session->m_socket, &session->m_overlapped.m_wsaBuf,
+		1, NULL, &rFlag, &session->m_overlapped.m_overlapped, NULL );
 }
 
-void MainServer::ProcessPacket( int id, unsigned char* buffer )
+void MainServer::_ProcessPacket( int id, unsigned char* buffer )
 {
-	PACKETINFO::CLIENT_TO_SERVER type = static_cast< PACKETINFO::CLIENT_TO_SERVER >( buffer[ 1 ] );
+	PacketInfo::EClientToServer type = static_cast< PacketInfo::EClientToServer >( buffer[ 1 ] );
 	switch ( type )
 	{
-	case PACKETINFO::CLIENT_TO_SERVER::LOGIN:
+	case PacketInfo::EClientToServer::Login:
 	{
-		PACKET::CLIENT_TO_SERVER::LoginPacket* p = reinterpret_cast<PACKET::CLIENT_TO_SERVER::LoginPacket*>( buffer );
-		LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_LOGIN, new LOBBY::LoginTask{ id, p->nickname } );
+		Packet::ClientToServer::LoginPacket* p = 
+			reinterpret_cast< Packet::ClientToServer::LoginPacket* >( buffer );
+		LobbyManager::GetInstance().PushTask( Lobby::ETaskType::UserLogin,
+			new Lobby::LoginTask{ id, p->m_nickname } );
 	}
 	break;
-	case PACKETINFO::CLIENT_TO_SERVER::LOBBYCHAT:
+	case PacketInfo::EClientToServer::LobbyChat:
 	{
-		PACKET::CLIENT_TO_SERVER::LobbyChatPacket* p = reinterpret_cast<PACKET::CLIENT_TO_SERVER::LobbyChatPacket*>( buffer );
-		LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::LOBBY_CHAT, new LOBBY::ChatTask{ id, p->message } );
+		Packet::ClientToServer::LobbyChatPacket* p = 
+			reinterpret_cast< Packet::ClientToServer::LobbyChatPacket* >( buffer );
+		LobbyManager::GetInstance().PushTask( Lobby::ETaskType::LobbyChat,
+			new Lobby::ChatTask{ id, p->m_message } );
 	}
 	break;
-	case PACKETINFO::CLIENT_TO_SERVER::STARTMATCHING:
+	case PacketInfo::EClientToServer::StartMatching:
 	{
-		PACKET::CLIENT_TO_SERVER::StartMatchingPacket* p = reinterpret_cast<PACKET::CLIENT_TO_SERVER::StartMatchingPacket*>( buffer );
-		MatchMaker::GetInstance().PushTask( MATCH::TASK_TYPE::USER_STARTMATCHING, new MATCH::StartMatchingTask{ LobbyManager::GetInstance().GetSession( id ) } );
+		Packet::ClientToServer::StartMatchingPacket* p = 
+			reinterpret_cast< Packet::ClientToServer::StartMatchingPacket* >( buffer );
+		MatchMaker::GetInstance().PushTask( Match::ETaskType::StartMatching,
+			new Match::StartMatchingTask{ LobbyManager::GetInstance().GetSession( id ) } );
 	}
 	break;
-	case PACKETINFO::CLIENT_TO_SERVER::STOPMATCHING:
+	case PacketInfo::EClientToServer::StopMatching:
 	{
-		PACKET::CLIENT_TO_SERVER::StopMatchingPacket* p = reinterpret_cast<PACKET::CLIENT_TO_SERVER::StopMatchingPacket*>( buffer );
-		MatchMaker::GetInstance().PushTask( MATCH::TASK_TYPE::USER_STOPMATCHING, new MATCH::StopMatchingTask{ LobbyManager::GetInstance().GetSession( id ) } );
+		Packet::ClientToServer::StopMatchingPacket* p = 
+			reinterpret_cast< Packet::ClientToServer::StopMatchingPacket* >( buffer );
+		MatchMaker::GetInstance().PushTask( Match::ETaskType::StopMatching,
+			new Match::StopMatchingTask{ LobbyManager::GetInstance().GetSession( id ) } );
 	}
 	break;
-	case PACKETINFO::CLIENT_TO_SERVER::MOVEPLAYER:
+	case PacketInfo::EClientToServer::MovePlayer:
 	{
-		PACKET::CLIENT_TO_SERVER::PlayerMovePacket* p = reinterpret_cast<PACKET::CLIENT_TO_SERVER::PlayerMovePacket*>( buffer );
-		GameManager::GetInstance().PushTask( INGAME::TASK_TYPE::MOVE_PLAYER, new INGAME::MovePlayerTask{ LobbyManager::GetInstance().GetSession( id ), id, p->x, p->y, p->z, p->angle } );
+		Packet::ClientToServer::PlayerMovePacket* p = 
+			reinterpret_cast< Packet::ClientToServer::PlayerMovePacket* >( buffer );
+		GameManager::GetInstance().PushTask( INGAME::ETaskType::MovePlayer,
+			new INGAME::MovePlayerTask{ LobbyManager::GetInstance().GetSession( id ), id, p->m_x, p->m_y, p->m_z, p->m_angle } );
 	}
 	break;
-	case PACKETINFO::CLIENT_TO_SERVER::ATTACK:
+	case PacketInfo::EClientToServer::Attack:
 	{
-		PACKET::CLIENT_TO_SERVER::PlayerAttackPacket* p = reinterpret_cast<PACKET::CLIENT_TO_SERVER::PlayerAttackPacket*>( buffer );
-		GameManager::GetInstance().PushTask( INGAME::TASK_TYPE::ATTACK_PLAYER, new INGAME::AttackPlayerTask{ LobbyManager::GetInstance().GetSession( id ), id } );
+		Packet::ClientToServer::PlayerAttackPacket* p = 
+			reinterpret_cast< Packet::ClientToServer::PlayerAttackPacket* >( buffer );
+		GameManager::GetInstance().PushTask( INGAME::ETaskType::AttackPlayer,
+			new INGAME::AttackPlayerTask{ LobbyManager::GetInstance().GetSession( id ), id } );
 	}
 	break;
 	default:

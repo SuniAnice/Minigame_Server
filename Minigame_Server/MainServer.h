@@ -2,6 +2,7 @@
 
 #pragma once
 
+
 #include "Slngleton.h"
 #include "global.h"
 #include <thread>
@@ -19,16 +20,17 @@ public:
 
 	void SendPacket( SOCKET& target, void* p );
 private:
-	void Init();
+	void _Init();
 private:
 	static constexpr int WORKER_THREADS = 4;
 
-	SOCKET listenSocket;
-	HANDLE hIOCP;
+	SOCKET m_listenSocket;
 
-	std::vector< std::thread > workerThreads;
+	HANDLE m_hIOCP;
 
-	void ProcessPacket( int id, unsigned char* over );
+	std::vector< std::thread > m_workerThreads;
 
-	void WorkerFunc();
+	void _ProcessPacket( int id, unsigned char* over );
+
+	void _WorkerFunc();
 };

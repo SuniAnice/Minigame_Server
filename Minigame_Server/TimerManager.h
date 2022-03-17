@@ -7,14 +7,14 @@
 
 
 class TimerManager : public Base::TSingleton < TimerManager >,
-	public BaseManager < INGAME::TASK_TYPE >
+	public BaseManager < INGAME::ETaskType >
 {
 public:
 	TimerManager();
 	virtual ~TimerManager();
 
 	void PushTask( std::chrono::system_clock::time_point time, 
-		INGAME::TASK_TYPE type, void* task );
+		INGAME::ETaskType type, void* task );
 
 	virtual void ThreadFunc();
 private:

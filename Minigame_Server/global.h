@@ -2,6 +2,7 @@
 
 #pragma once
 
+
 #include <WS2tcpip.h>
 #include <MSWSock.h>
 
@@ -19,395 +20,395 @@
 using namespace std::chrono;
 
 
-constexpr int PORT = 4000;
-constexpr int BUFFER_SIZE = 1024;
-constexpr int MAX_PLAYER_IN_ROOM = 2;		// 최대 방 인원수
-constexpr int SEEKER_COUNT = 1;				// 술래 인원수
-constexpr int MAX_ROUND = 5;				// 최대 진행 라운드
-constexpr int NUM_OF_OBJECTS = 10;			// 랜덤하게 설정될 오브젝트의 수
-constexpr size_t MAX_USER = 100000;			// 최대 동접자
-constexpr seconds WAIT_TIME = 5s;			// 라운드 대기 시간
-constexpr seconds READY_TIME = 30s;			// 라운드 준비 시간
-constexpr seconds GAME_TIME = 180s;			// 라운드 진행 시간
-constexpr seconds INTERVAL_TIME = 5s;		// 라운드 종료 인터벌
-constexpr double ATTACK_RANGE = 300;		// 공격 사정거리
-constexpr double ATTACK_ANGLE = 45;			// 공격 각도
+constexpr int		PORT =					4000;
+constexpr int		BUFFER_SIZE =			1024;
+constexpr int		MAX_PLAYER_IN_ROOM =	2;		// 최대 방 인원수
+constexpr int		SEEKER_COUNT =			1;		// 술래 인원수
+constexpr int		MAX_ROUND =				5;		// 최대 진행 라운드
+constexpr int		NUM_OF_OBJECTS =		10;		// 랜덤하게 설정될 오브젝트의 수
+constexpr size_t	MAX_USER =				100000;	// 최대 동접자
+constexpr seconds	WAIT_TIME =				5s;		// 라운드 대기 시간
+constexpr seconds	READY_TIME =			30s;	// 라운드 준비 시간
+constexpr seconds	GAME_TIME =				180s;	// 라운드 진행 시간
+constexpr seconds	INTERVAL_TIME =			5s;		// 라운드 종료 인터벌
+constexpr double	ATTACK_RANGE =			300;	// 공격 사정거리
+constexpr double	ATTACK_ANGLE =			45;		// 공격 각도
 
 
-enum class OP_TYPE
+enum class EOpType
 {
-	OP_RECV, OP_SEND, OP_ACCEPT
+	Recv, Send, Accept
 };
 
-struct OVERLAPPED_EXTENDED
+struct OverlappedExtended
 {
-	WSAOVERLAPPED overlapped;
-	WSABUF wsaBuf;
+	WSAOVERLAPPED m_overlapped;
+	WSABUF m_wsaBuf;
 
-	unsigned char packetBuffer[ BUFFER_SIZE ];
-	OP_TYPE opType;
-	SOCKET socket;
+	unsigned char m_packetBuffer[ BUFFER_SIZE ];
+	EOpType m_opType;
+	SOCKET m_socket;
 };
 
 struct Session {
-	OVERLAPPED_EXTENDED overlapped;
-	SOCKET socket;
-	int key;
-	int prevSize;
-	std::wstring nickname;
-	int roomIndex = -1;
-	bool isMatching = false;
+	OverlappedExtended m_overlapped;
+	SOCKET m_socket;
+	int m_key;
+	int m_prevSize;
+	std::wstring m_nickname;
+	int m_roomIndex = -1;
+	bool m_isMatching = false;
 };
 
 // 인게임 유저 정보
 struct UserInfo
 {
-	int userNum;
-	wchar_t nickname[ 10 ] = {};
-	bool isAlive = true;
-	float x = 0;
-	float y = 0;
-	float z = 0;
-	float angle = 0;
-	int score = 0;
-	int hp = 0;
+	int m_userNum;
+	wchar_t m_nickname[ 10 ] = {};
+	bool m_isAlive = true;
+	float m_x = 0;
+	float m_y = 0;
+	float m_z = 0;
+	float m_angle = 0;
+	int m_score = 0;
+	int m_hp = 0;
 };
 
 struct GameRoom
 {
-	std::vector< Session* > userSessions;
-	std::unordered_map <int, UserInfo> userInfo;
-	unsigned int roomNum = 0;
-	int currentRound = 1;
-	int currentSeeker = -1;
-	int aliveHider = -1;
+	std::vector< Session* > m_userSessions;
+	std::unordered_map <int, UserInfo> m_userInfo;
+	unsigned int m_roomNum = 0;
+	int m_currentRound = 1;
+	int m_currentSeeker = -1;
+	int m_aliveHider = -1;
 };
 
 
-namespace LOBBY
+namespace Lobby
 {
-	enum class TASK_TYPE 
+	enum class ETaskType 
 	{
-		USER_ACCEPT,
-		USER_LOGIN,
-		USER_LOGOUT,
+		UserAccept,
+		UserLogin,
+		UserLogout,
 
-		LOBBY_CHAT,
+		LobbyChat,
 
-		USER_STARTMATCHING,
-		USER_STOPMATCHING,
+		StartMatching,
+		StopMatching,
 
-		USER_ENTERLOBBY,
-		USER_EXITLOBBY,
+		EnterLobby,
+		ExitLobby,
 	};
 
 	struct LoginTask
 	{
-		int id;
-		std::wstring nickname;
+		int m_id;
+		std::wstring m_nickname;
 	};
 
 	struct ChatTask
 	{
-		int id;
-		std::wstring message;
+		int m_id;
+		std::wstring m_message;
 	};
 
 	struct EnterLobbyTask
 	{
-		Session* session;
+		Session* m_session;
 	};
 
 	struct ExitLobbyTask
 	{
-		Session* session;
-		size_t roomNum;
+		Session* m_session;
+		size_t m_roomNum;
 	};
 }
 
-namespace MATCH
+namespace Match
 {
-	enum class TASK_TYPE
+	enum class ETaskType
 	{
-		USER_STARTMATCHING,
-		USER_STOPMATCHING,
-		USER_REMOVE,
+		StartMatching,
+		StopMatching,
+		UserRemove,
 	};
 
 	struct StartMatchingTask
 	{
-		Session* session;
+		Session* m_session;
 	};
 
 	struct StopMatchingTask
 	{
-		Session* session;
+		Session* m_session;
 	};
 
 	struct RemovePlayerTask
 	{
-		Session* session;
+		Session* m_session;
 	};
 }
 
 namespace INGAME
 {
-	enum class TASK_TYPE
+	enum class ETaskType
 	{
-		ROOM_CREATE,
-		ROOM_REMOVE,
-		ROUND_WAIT,
-		ROUND_READY,
-		ROUND_END,
-		MOVE_PLAYER,
-		ATTACK_PLAYER,
-		REMOVE_PLAYER,
+		RoomCreate,
+		RoomRemove,
+		RoundWait,
+		RoundReady,
+		RoundEnd,
+		MovePlayer,
+		AttackPlayer,
+		RemovePlayer,
 	};
 
 	struct CreateRoomTask
 	{
-		GameRoom* room;
+		GameRoom* m_room;
 	};
 
 	struct RoundWaitTask
 	{
-		GameRoom* room;
+		GameRoom* m_room;
 	};
 
 	struct RoundReadyTask
 	{
-		GameRoom* room;
-		int currentRound;
+		GameRoom* m_room;
+		int m_currentRound;
 	};
 
 	struct RoundEndTask
 	{
-		GameRoom* room;
-		int currentRound;
+		GameRoom* m_room;
+		int m_currentRound;
 	};
 
 	struct RemoveRoomTask
 	{
-		GameRoom* room;
+		GameRoom* m_room;
 	};
 
 	struct MovePlayerTask
 	{
-		Session* session;
-		int index;
-		float x;
-		float y;
-		float z;
-		float angle;
+		Session* m_session;
+		int m_index;
+		float m_x;
+		float m_y;
+		float m_z;
+		float m_angle;
 	};
 
 	struct AttackPlayerTask
 	{
-		Session* session;
-		int index;
+		Session* m_session;
+		int m_index;
 	};
 
 	struct RemovePlayerTask
 	{
-		int roomindex;
-		int index;
-		Session* session;
+		int m_roomindex;
+		int m_index;
+		Session* m_session;
 	};
 }
 
 struct TimerEvent
 {
-	std::chrono::system_clock::time_point time;
-	std::pair < INGAME::TASK_TYPE, void* > task;
+	std::chrono::system_clock::time_point m_time;
+	std::pair < INGAME::ETaskType, void* > m_task;
 
 	bool operator< ( const TimerEvent& e ) const
 	{
-		return this->time > e.time;
+		return this->m_time > e.m_time;
 	}
 };
 
-namespace PACKETINFO
+namespace PacketInfo
 {
-	enum class SERVER_TO_CLIENT : unsigned char
+	enum class EServerToClient : unsigned char
 	{
-		LOGINOK,
-		LOGINFAIL,
-		ADDPLAYER,
-		REMOVEPLAYER,
-		LOBBYCHAT,
-		GAMEMATCHED,
-		ROUNDREADY,
-		ROUNDSTART,
-		MOVEPLAYER,
-		ATTACK,
-		REMOVEPLAYERINGAME,
-		KILLPLAYER,
-		GAMEEND,
-		SETPOSITION,
+		LoginOk,
+		LoginFail,
+		AddPlayer,
+		RemovePlayer,
+		LobbyChat,
+		GameMatched,
+		RoundReady,
+		RoundStart,
+		MovePlayer,
+		Attack,
+		RemovePlayerInGame,
+		KillPlayer,
+		GameEnd,
+		SetPosition,
 	};
 
-	enum class CLIENT_TO_SERVER : unsigned char
+	enum class EClientToServer : unsigned char
 	{
-		LOGIN,
-		LOBBYCHAT,
-		STARTMATCHING,
-		STOPMATCHING,
-		MOVEPLAYER,
-		ATTACK,
+		Login,
+		LobbyChat,
+		StartMatching,
+		StopMatching,
+		MovePlayer,
+		Attack,
 	};
 }
 
 #pragma pack(push, 1)
-namespace PACKET
+namespace Packet
 {
-	namespace SERVER_TO_CLIENT
+	namespace ServerToClient
 	{
 		struct LoginOkPacket
 		{
-			unsigned char size = sizeof( LoginOkPacket );
-			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::LOGINOK;
-			int index;
+			unsigned char m_size = sizeof( LoginOkPacket );
+			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::LoginOk;
+			int m_index;
 		};
 
 		struct LoginFailPacket
 		{
-			unsigned char size = sizeof( LoginFailPacket );
-			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::LOGINFAIL;
+			unsigned char m_size = sizeof( LoginFailPacket );
+			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::LoginFail;
 		};
 
 		struct AddPlayerPacket
 		{
-			unsigned char size = sizeof( AddPlayerPacket );
-			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::ADDPLAYER;
-			wchar_t nickname[ 10 ] = {};
+			unsigned char sm_sizeize = sizeof( AddPlayerPacket );
+			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::AddPlayer;
+			wchar_t m_nickname[ 10 ] = {};
 		};
 
 		struct RemovePlayerPacket
 		{
-			unsigned char size = sizeof( RemovePlayerPacket );
-			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::REMOVEPLAYER;
-			wchar_t nickname[ 10 ] = {};
+			unsigned char m_size = sizeof( RemovePlayerPacket );
+			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::RemovePlayer;
+			wchar_t m_nickname[ 10 ] = {};
 		};
 
 		struct LobbyChatPacket
 		{
-			unsigned char size = sizeof( LobbyChatPacket );
-			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::LOBBYCHAT;
-			wchar_t nickname[ 10 ] = {};
-			wchar_t message[ 50 ] = {};
+			unsigned char m_size = sizeof( LobbyChatPacket );
+			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::LobbyChat;
+			wchar_t m_nickname[ 10 ] = {};
+			wchar_t m_message[ 50 ] = {};
 		};
 
 		struct GameMatchedPacket
 		{
-			unsigned char size = sizeof( GameMatchedPacket );
-			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::GAMEMATCHED;
-			UserInfo users[ MAX_PLAYER_IN_ROOM ];
+			unsigned char m_size = sizeof( GameMatchedPacket );
+			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::GameMatched;
+			UserInfo m_users[ MAX_PLAYER_IN_ROOM ];
 		};
 
 		struct RoundReadyPacket
 		{
-			unsigned char size = sizeof( RoundReadyPacket );
-			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::ROUNDREADY;
-			int seeker = 0;
+			unsigned char m_size = sizeof( RoundReadyPacket );
+			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::RoundReady;
+			int m_seeker = 0;
 		};
 
 		struct RoundStartPacket
 		{
-			unsigned char size = sizeof( RoundStartPacket );
-			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::ROUNDSTART;
+			unsigned char m_size = sizeof( RoundStartPacket );
+			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::RoundStart;
 		};
 
 		struct MovePlayerPacket
 		{
-			unsigned char size = sizeof( MovePlayerPacket );
-			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::MOVEPLAYER;
-			int index;
-			float x;
-			float y;
-			float z;
-			float angle;
+			unsigned char m_size = sizeof( MovePlayerPacket );
+			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::MovePlayer;
+			int m_index;
+			float m_x;
+			float m_y;
+			float m_z;
+			float m_angle;
 		};
 
 		struct AttackPlayerPacket
 		{
-			unsigned char size = sizeof( AttackPlayerPacket );
-			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::ATTACK;
-			int index;
+			unsigned char m_size = sizeof( AttackPlayerPacket );
+			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::Attack;
+			int m_index;
 		};
 
 		struct RemovePlayerIngamePacket
 		{
-			unsigned char size = sizeof( RemovePlayerIngamePacket );
-			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::REMOVEPLAYERINGAME;
-			int index;
+			unsigned char m_size = sizeof( RemovePlayerIngamePacket );
+			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::RemovePlayerInGame;
+			int m_index;
 		};
 
 		struct KillPlayerPacket
 		{
-			unsigned char size = sizeof( KillPlayerPacket );
-			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::KILLPLAYER;
-			int killer;
-			int victim;
+			unsigned char m_size = sizeof( KillPlayerPacket );
+			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::KillPlayer;
+			int m_killer;
+			int m_victim;
 		};
 
 		struct GameEndPacket
 		{
-			unsigned char size = sizeof( GameEndPacket );
-			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::GAMEEND;
+			unsigned char m_size = sizeof( GameEndPacket );
+			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::GameEnd;
 		};
 
 		struct SetPositionPacket
 		{
-			unsigned char size = sizeof( SetPositionPacket );
-			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::SETPOSITION;
-			float x;
-			float y;
-			float z;
+			unsigned char m_size = sizeof( SetPositionPacket );
+			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::SetPosition;
+			float m_x;
+			float m_y;
+			float m_z;
 		};
 	}
 
-	namespace CLIENT_TO_SERVER
+	namespace ClientToServer
 	{
 		struct LoginPacket
 		{
-			unsigned char size = sizeof( LoginPacket );
-			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::LOGIN;
-			wchar_t nickname[ 10 ] = {};
+			unsigned char m_size = sizeof( LoginPacket );
+			PacketInfo::EClientToServer m_type = PacketInfo::EClientToServer::Login;
+			wchar_t m_nickname[ 10 ] = {};
 		};
 
 		struct LobbyChatPacket
 		{
-			unsigned char size = sizeof( LobbyChatPacket );
-			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::LOBBYCHAT;
-			wchar_t message[ 50 ] = {};
+			unsigned char m_size = sizeof( LobbyChatPacket );
+			PacketInfo::EClientToServer m_type = PacketInfo::EClientToServer::LobbyChat;
+			wchar_t m_message[ 50 ] = {};
 		};
 
 		struct StartMatchingPacket
 		{
-			unsigned char size = sizeof( StartMatchingPacket );
-			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::STARTMATCHING;
+			unsigned char m_size = sizeof( StartMatchingPacket );
+			PacketInfo::EClientToServer m_type = PacketInfo::EClientToServer::StartMatching;
 		};
 
 		struct StopMatchingPacket
 		{
-			unsigned char size = sizeof( StopMatchingPacket );
-			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::STOPMATCHING;
+			unsigned char m_size = sizeof( StopMatchingPacket );
+			PacketInfo::EClientToServer m_type = PacketInfo::EClientToServer::StopMatching;
 		};
 
 		struct PlayerMovePacket
 		{
-			unsigned char size = sizeof( PlayerMovePacket );
-			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::MOVEPLAYER;
-			float x;
-			float y;
-			float z;
-			float angle;
+			unsigned char m_size = sizeof( PlayerMovePacket );
+			PacketInfo::EClientToServer m_type = PacketInfo::EClientToServer::MovePlayer;
+			float m_x;
+			float m_y;
+			float m_z;
+			float m_angle;
 		};
 
 		struct PlayerAttackPacket
 		{
-			unsigned char size = sizeof( PlayerAttackPacket );
-			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::ATTACK;
+			unsigned char m_size = sizeof( PlayerAttackPacket );
+			PacketInfo::EClientToServer m_type = PacketInfo::EClientToServer::Attack;
 		};
 
 	}

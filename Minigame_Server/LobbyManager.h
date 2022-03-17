@@ -8,7 +8,7 @@
 
 
 class LobbyManager : public Base::TSingleton < LobbyManager >,
-	public BaseManager < LOBBY::TASK_TYPE >
+	public BaseManager < Lobby::ETaskType >
 {
 public:
 	LobbyManager();
@@ -26,10 +26,10 @@ private:
 
 	HANDLE m_handle;
 
-	int GetNewId(const SOCKET& socket);
+	int _GetNewId(const SOCKET& m_socket);
 
-	void BroadCastLobby( void* packet );
+	void _BroadCastLobby( void* packet );
 
-	bool FindUserName( const std::wstring& nickname );
+	bool _FindUserName( const std::wstring& nickname );
 };
 

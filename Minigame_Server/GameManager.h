@@ -7,7 +7,7 @@
 
 
 class GameManager : public Base::TSingleton < GameManager >,
-	public BaseManager < INGAME::TASK_TYPE >
+	public BaseManager < INGAME::ETaskType >
 {
 public:
 	GameManager();
@@ -17,13 +17,13 @@ public:
 private:
 	std::unordered_map < unsigned int, GameRoom* > m_rooms;
 
-	void BroadCastPacket( GameRoom* room, void* packet );
+	void _BroadCastPacket( GameRoom* room, void* packet );
 
-	void BroadCastPacketExceptMe( GameRoom* room, void* packet, int index );
+	void _BroadCastPacketExceptMe( GameRoom* room, void* packet, int index );
 
-	int PickSeeker( GameRoom* room );
+	int _PickSeeker( GameRoom* room ); 
 
-	bool CheckPlayer( UserInfo& info );
+	bool _CheckPlayer( UserInfo& info );
 
-	unsigned int GetNewRoomNum();
+	unsigned int _GetNewRoomNum();
 };

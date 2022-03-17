@@ -7,7 +7,7 @@
 
 
 class MatchMaker : public Base::TSingleton < MatchMaker >,
-	public BaseManager < MATCH::TASK_TYPE >
+	public BaseManager < Match::ETaskType >
 {
 public:
 	MatchMaker();

@@ -12,7 +12,7 @@ TimerManager::~TimerManager()
 }
 
 void TimerManager::PushTask( std::chrono::system_clock::time_point time,
-	INGAME::TASK_TYPE type, void* task )
+	INGAME::ETaskType type, void* task )
 {
 	m_timerQueue.push( TimerEvent{ time, std::make_pair( type, task ) } );
 }
@@ -30,7 +30,7 @@ void TimerManager::ThreadFunc()
 		}
 		
 		// 시간이 되지 않았으면 다시 넣음
-		if ( ev.time > std::chrono::system_clock::now() )
+		if ( ev.m_time > std::chrono::system_clock::now() )
 		{
 			m_timerQueue.push( ev );
 			std::this_thread::sleep_for( 10ms );
@@ -38,7 +38,7 @@ void TimerManager::ThreadFunc()
 		}
 
 		// 시간이 되었다면 전달받은 이벤트를 되돌려줌
-		GameManager::GetInstance().PushTask( ev.task.first, ev.task.second );
+		GameManager::GetInstance().PushTask( ev.m_task.first, ev.m_task.second );
 
 	}
 }

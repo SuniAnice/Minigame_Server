@@ -13,7 +13,7 @@ LobbyManager::~LobbyManager() {}
 
 void LobbyManager::ThreadFunc()
 {
-	std::pair <LOBBY::TASK_TYPE, void* > task;
+	std::pair <Lobby::ETaskType, void* > task;
 	while ( true )
 	{
 		if ( !m_tasks.try_pop( task ) )
@@ -24,32 +24,32 @@ void LobbyManager::ThreadFunc()
 
 		switch ( task.first )
 		{
-		case LOBBY::TASK_TYPE::USER_ACCEPT:
+		case Lobby::ETaskType::UserAccept:
 		{
-			OVERLAPPED_EXTENDED* over = reinterpret_cast<OVERLAPPED_EXTENDED*>( task.second );
+			OverlappedExtended* over = reinterpret_cast<OverlappedExtended*>( task.second );
 			if ( over != nullptr )
 			{
-				int id = GetNewId( over->socket );
-				CreateIoCompletionPort( reinterpret_cast<HANDLE>( over->socket ), m_handle, id, 0 );
-				m_users[ id ]->overlapped = *over;
-				m_users[ id ]->overlapped.opType = OP_TYPE::OP_RECV;
-				m_users[ id ]->prevSize = 0;
+				int id = _GetNewId( over->m_socket );
+				CreateIoCompletionPort( reinterpret_cast<HANDLE>( over->m_socket ), m_handle, id, 0 );
+				m_users[ id ]->m_overlapped = *over;
+				m_users[ id ]->m_overlapped.m_opType = EOpType::Recv;
+				m_users[ id ]->m_prevSize = 0;
 				PRINT_LOG( "플레이어 Accept 성공" );
 				MainServer::GetInstance().DoRecv( m_users[ id ] );
 			}
 		}
 		break;
-		case LOBBY::TASK_TYPE::USER_LOGIN:
+		case Lobby::ETaskType::UserLogin:
 		{
-			LOBBY::LoginTask* t = reinterpret_cast< LOBBY::LoginTask* >( task.second );
+			Lobby::LoginTask* t = reinterpret_cast< Lobby::LoginTask* >( task.second );
 			if ( t != nullptr )
 			{
-				if ( !m_usernames.count( t->nickname ) )
+				if ( !m_usernames.count( t->m_nickname ) )
 				{
-					m_usernames.insert( t->nickname );
-					PACKET::SERVER_TO_CLIENT::LoginOkPacket okPacket;
-					okPacket.index = t->id;
-					MainServer::GetInstance().SendPacket( m_users[ t->id ]->socket, &okPacket );
+					m_usernames.insert( t->m_nickname );
+					Packet::ServerToClient::LoginOkPacket okPacket;
+					okPacket.m_index = t->m_id;
+					MainServer::GetInstance().SendPacket( m_users[ t->m_id ]->m_socket, &okPacket );
 					for ( auto& pl : m_users )
 					{
 						if ( pl.second == nullptr )
@@ -57,23 +57,23 @@ void LobbyManager::ThreadFunc()
 							continue;
 						}
 						// 접속 중인 플레이어들의 정보 전송
-						if ( pl.second->nickname.size() != 0 && pl.second->nickname != t->nickname && pl.second->roomIndex == -1 )
+						if ( pl.second->m_nickname.size() != 0 && pl.second->m_nickname != t->m_nickname && pl.second->m_roomIndex == -1 )
 						{
-							PACKET::SERVER_TO_CLIENT::AddPlayerPacket plpacket;
-							wmemcpy( plpacket.nickname, m_users[ pl.first ]->nickname.c_str(), m_users[ pl.first ]->nickname.size() );
-							MainServer::GetInstance().SendPacket( m_users[ t->id ]->socket, &plpacket );
+							Packet::ServerToClient::AddPlayerPacket plpacket;
+							wmemcpy( plpacket.m_nickname, m_users[ pl.first ]->m_nickname.c_str(), m_users[ pl.first ]->m_nickname.size() );
+							MainServer::GetInstance().SendPacket( m_users[ t->m_id ]->m_socket, &plpacket );
 						}
 					}
-					m_users[ t->id ]->nickname = t->nickname;
-					PACKET::SERVER_TO_CLIENT::AddPlayerPacket packet;
-					wmemcpy( packet.nickname, m_users[ t->id ]->nickname.c_str(), m_users[ t->id ]->nickname.size() );
-					BroadCastLobby( &packet );
+					m_users[ t->m_id ]->m_nickname = t->m_nickname;
+					Packet::ServerToClient::AddPlayerPacket packet;
+					wmemcpy( packet.m_nickname, m_users[ t->m_id ]->m_nickname.c_str(), m_users[ t->m_id ]->m_nickname.size() );
+					_BroadCastLobby( &packet );
 					PRINT_LOG( "유저 로그인 성공" );
 				}
 				else
 				{
-					PACKET::SERVER_TO_CLIENT::LoginFailPacket packet;
-					MainServer::GetInstance().SendPacket( m_users[ t->id ]->socket, &packet );
+					Packet::ServerToClient::LoginFailPacket packet;
+					MainServer::GetInstance().SendPacket( m_users[ t->m_id ]->m_socket, &packet );
 					PRINT_LOG( "유저 로그인 실패 - 아이디 중복" );
 				}
 				
@@ -81,20 +81,20 @@ void LobbyManager::ThreadFunc()
 			}
 		}
 			break;
-		case LOBBY::TASK_TYPE::LOBBY_CHAT:
+		case Lobby::ETaskType::LobbyChat:
 		{
-			LOBBY::ChatTask* t = reinterpret_cast<LOBBY::ChatTask*>( task.second );
+			Lobby::ChatTask* t = reinterpret_cast<Lobby::ChatTask*>( task.second );
 			if ( t != nullptr )
 			{
-				PACKET::SERVER_TO_CLIENT::LobbyChatPacket packet;
-				wmemcpy( packet.nickname, m_users[ t->id ]->nickname.c_str(), m_users[ t->id ]->nickname.size() );
-				wmemcpy( packet.message, t->message.c_str(), t->message.size() );
-				BroadCastLobby( &packet );
+				Packet::ServerToClient::LobbyChatPacket packet;
+				wmemcpy( packet.m_nickname, m_users[ t->m_id ]->m_nickname.c_str(), m_users[ t->m_id ]->m_nickname.size() );
+				wmemcpy( packet.m_message, t->m_message.c_str(), t->m_message.size() );
+				_BroadCastLobby( &packet );
 				delete task.second;
 			}
 		}
 		break;
-		case LOBBY::TASK_TYPE::USER_LOGOUT:
+		case Lobby::ETaskType::UserLogout:
 		{
 			int* id = reinterpret_cast<int*>( task.second );
 			if ( m_users.count( *id ) )
@@ -102,16 +102,16 @@ void LobbyManager::ThreadFunc()
 				std::cout << *id << "번 플레이어 로그아웃" << std::endl;
 
 				// 닉네임을 설정한 사람이면
-				if ( m_users[ *id ]->nickname.size() )
+				if ( m_users[ *id ]->m_nickname.size() )
 				{
-					m_usernames.erase( m_users[ *id ]->nickname );
-					if ( m_users[ *id ]->roomIndex == -1 )
+					m_usernames.erase( m_users[ *id ]->m_nickname );
+					if ( m_users[ *id ]->m_roomIndex == -1 )
 					{
-						PACKET::SERVER_TO_CLIENT::RemovePlayerPacket packet;
-						wmemcpy( packet.nickname, m_users[ *id ]->nickname.c_str(), m_users[ *id ]->nickname.size() );
-						BroadCastLobby( &packet );
+						Packet::ServerToClient::RemovePlayerPacket packet;
+						wmemcpy( packet.m_nickname, m_users[ *id ]->m_nickname.c_str(), m_users[ *id ]->m_nickname.size() );
+						_BroadCastLobby( &packet );
 						// 매칭을 돌리지 않았으면 바로 제거 가능
-						if ( !m_users[ *id ]->isMatching )
+						if ( !m_users[ *id ]->m_isMatching )
 						{
 							auto t = m_users[ *id ];
 							m_users.erase( *id );
@@ -121,54 +121,54 @@ void LobbyManager::ThreadFunc()
 						else
 						{
 							// 매칭중이면 객체 삭제를 매치메이커에 위임
-							MatchMaker::GetInstance().PushTask( MATCH::TASK_TYPE::USER_REMOVE, new MATCH::RemovePlayerTask{ m_users[ *id ] } );
+							MatchMaker::GetInstance().PushTask( Match::ETaskType::UserRemove, new Match::RemovePlayerTask{ m_users[ *id ] } );
 						}
 					}
 					else
 					{
 						// 게임에 있다면 객체 삭제를 게임매니저에 위임
-						GameManager::GetInstance().PushTask( INGAME::TASK_TYPE::REMOVE_PLAYER,
-							new INGAME::RemovePlayerTask{ m_users[ *id ]->roomIndex, *id , m_users[ *id ] } );
+						GameManager::GetInstance().PushTask( INGAME::ETaskType::RemovePlayer,
+							new INGAME::RemovePlayerTask{ m_users[ *id ]->m_roomIndex, *id , m_users[ *id ] } );
 					}
 				}
 				m_users.erase( *id );
 			}
 		}
 		break;
-		case LOBBY::TASK_TYPE::USER_ENTERLOBBY:
+		case Lobby::ETaskType::EnterLobby:
 		{
-			LOBBY::EnterLobbyTask* t = reinterpret_cast<LOBBY::EnterLobbyTask*>( task.second );
-			if ( t->session != nullptr )
+			Lobby::EnterLobbyTask* t = reinterpret_cast<Lobby::EnterLobbyTask*>( task.second );
+			if ( t->m_session != nullptr )
 			{
-				t->session->roomIndex = -1;
+				t->m_session->m_roomIndex = -1;
 				for ( auto& pl : m_users )
 				{
 					// 접속 중인 플레이어들의 정보 전송
-					if ( pl.second->nickname.size() != 0 && pl.second->nickname != t->session->nickname )
+					if ( pl.second->m_nickname.size() != 0 && pl.second->m_nickname != t->m_session->m_nickname )
 					{
-						PACKET::SERVER_TO_CLIENT::AddPlayerPacket plpacket;
-						wmemcpy( plpacket.nickname, m_users[ pl.first ]->nickname.c_str(), m_users[ pl.first ]->nickname.size() );
-						MainServer::GetInstance().SendPacket( t->session->socket, &plpacket );
+						Packet::ServerToClient::AddPlayerPacket plpacket;
+						wmemcpy( plpacket.m_nickname, m_users[ pl.first ]->m_nickname.c_str(), m_users[ pl.first ]->m_nickname.size() );
+						MainServer::GetInstance().SendPacket( t->m_session->m_socket, &plpacket );
 					}
 				}
-				PACKET::SERVER_TO_CLIENT::AddPlayerPacket packet;
-				wmemcpy( packet.nickname, t->session->nickname.c_str(), t->session->nickname.size() );
-				BroadCastLobby( &packet );
+				Packet::ServerToClient::AddPlayerPacket packet;
+				wmemcpy( packet.m_nickname, t->m_session->m_nickname.c_str(), t->m_session->m_nickname.size() );
+				_BroadCastLobby( &packet );
 				delete task.second;
 			}
 		}
 		break;
-		case LOBBY::TASK_TYPE::USER_EXITLOBBY:
+		case Lobby::ETaskType::ExitLobby:
 		{
-			LOBBY::ExitLobbyTask* t = reinterpret_cast<LOBBY::ExitLobbyTask*>( task.second );
-			if ( t->session != nullptr )
+			Lobby::ExitLobbyTask* t = reinterpret_cast<Lobby::ExitLobbyTask*>( task.second );
+			if ( t->m_session != nullptr )
 			{
-				t->session->roomIndex = t->roomNum;
+				t->m_session->m_roomIndex = t->m_roomNum;
 
-				PACKET::SERVER_TO_CLIENT::RemovePlayerPacket packet;
-				wmemcpy( packet.nickname, t->session->nickname.c_str(), t->session->nickname.size() );
+				Packet::ServerToClient::RemovePlayerPacket packet;
+				wmemcpy( packet.m_nickname, t->m_session->m_nickname.c_str(), t->m_session->m_nickname.size() );
 
-				BroadCastLobby( &packet );
+				_BroadCastLobby( &packet );
 				delete task.second;
 			}
 		}
@@ -184,25 +184,25 @@ void LobbyManager::SetHandle( const HANDLE& handle )
 
 Session* LobbyManager::GetSession( const int id )
 {
-	return m_users[id];
+	return m_users[ id ];
 }
 
-int LobbyManager::GetNewId( const SOCKET& socket )
+int LobbyManager::_GetNewId( const SOCKET& m_socket )
 {
 	for ( int i = 1; i < MAX_USER; ++i )
 	{
 		if ( !m_users.count( i ) )
 		{
 			m_users[ i ] = new Session();
-			m_users[ i ]->key = i;
-			m_users[ i ]->socket = socket;
+			m_users[ i ]->m_key = i;
+			m_users[ i ]->m_socket = m_socket;
 			return i;
 		}
 	}
 	return -1;
 }
 
-void LobbyManager::BroadCastLobby( void* packet )
+void LobbyManager::_BroadCastLobby( void* packet )
 {
 	for ( auto it = m_users.begin(); it != m_users.end(); it++ )
 	{
@@ -211,18 +211,18 @@ void LobbyManager::BroadCastLobby( void* packet )
 			it = m_users.erase( it );
 			continue;
 		}
-		if ( it->second->nickname.size() && it->second->roomIndex == -1 )
+		if ( it->second->m_nickname.size() && it->second->m_roomIndex == -1 )
 		{
-			MainServer::GetInstance().SendPacket( it->second->socket, packet );
+			MainServer::GetInstance().SendPacket( it->second->m_socket, packet );
 		}
 	}
 }
 
-bool LobbyManager::FindUserName( const std::wstring& nickname )
+bool LobbyManager::_FindUserName( const std::wstring& nickname )
 {
 	for ( auto& pl : m_users )
 	{
-		if ( pl.second->nickname == nickname )
+		if ( pl.second->m_nickname == nickname )
 			return true;
 	}
 	return false;

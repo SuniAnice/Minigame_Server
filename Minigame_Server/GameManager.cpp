@@ -22,7 +22,7 @@ GameManager::~GameManager()
 
 void GameManager::ThreadFunc()
 {
-	std::pair <INGAME::TASK_TYPE, void* > task;
+	std::pair <INGAME::ETaskType, void* > task;
 	while ( true )
 	{
 		if ( !m_tasks.try_pop( task ) )
@@ -32,130 +32,136 @@ void GameManager::ThreadFunc()
 		}
 		switch ( task.first )
 		{
-		case INGAME::TASK_TYPE::ROOM_CREATE:
+		case INGAME::ETaskType::RoomCreate:
 		{
 			INGAME::CreateRoomTask* t = reinterpret_cast< INGAME::CreateRoomTask* >( task.second );
-			if ( t->room != nullptr )
+			if ( t->m_room != nullptr )
 			{
-				unsigned int roomNum = GetNewRoomNum();
-				m_rooms[ roomNum ] = ( t->room );
-				m_rooms[ roomNum ]->roomNum = roomNum;
-				PACKET::SERVER_TO_CLIENT::GameMatchedPacket packet;
+				unsigned int roomNum = _GetNewRoomNum();
+				m_rooms[ roomNum ] = ( t->m_room );
+				m_rooms[ roomNum ]->m_roomNum = roomNum;
+				Packet::ServerToClient::GameMatchedPacket packet;
 				for ( int i = 0; i < MAX_PLAYER_IN_ROOM; i++ )
 				{
-					packet.users[ i ].userNum = t->room->userSessions[ i ]->key;
-					wmemcpy( packet.users[ i ].nickname, t->room->userSessions[ i ]->nickname.c_str(), t->room->userSessions[ i ]->nickname.size() );
+					packet.m_users[ i ].m_userNum = t->m_room->m_userSessions[ i ]->m_key;
+					wmemcpy( packet.m_users[ i ].m_nickname, t->m_room->m_userSessions[ i ]->m_nickname.c_str(),
+						t->m_room->m_userSessions[ i ]->m_nickname.size() );
 				}
-				BroadCastPacket( t->room, &packet );
+				_BroadCastPacket( t->m_room, &packet );
 
 				// 로비에서 플레이어 제거
-				for ( auto& pl : t->room->userSessions )
+				for ( auto& pl : t->m_room->m_userSessions )
 				{
-					LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_EXITLOBBY, new LOBBY::ExitLobbyTask{ pl, roomNum } );
+					LobbyManager::GetInstance().PushTask( Lobby::ETaskType::ExitLobby, new Lobby::ExitLobbyTask{ pl, roomNum } );
 				}
 
-				TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + WAIT_TIME, INGAME::TASK_TYPE::ROUND_WAIT, new INGAME::RoundWaitTask{ t->room } );
+				TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + WAIT_TIME, INGAME::ETaskType::RoundWait,
+					new INGAME::RoundWaitTask{ t->m_room } );
 				PRINT_LOG("방 생성 요청 받음");
 				delete task.second;
 			}
 		}
 			break;
-		case INGAME::TASK_TYPE::ROUND_WAIT:
+		case INGAME::ETaskType::RoundWait:
 		{
 			INGAME::RoundWaitTask* t = reinterpret_cast<INGAME::RoundWaitTask*>( task.second );
-			if ( t->room != nullptr )
+			if ( t->m_room != nullptr )
 			{
-				PACKET::SERVER_TO_CLIENT::RoundReadyPacket packet;
-				int picked = PickSeeker( t->room );
+				Packet::ServerToClient::RoundReadyPacket packet;
+				int picked = _PickSeeker( t->m_room );
 
 				if ( picked == -1 )
 				{
 					// 게임 종료 처리 및 방 제거 태스크 등록
-					PushTask( INGAME::TASK_TYPE::ROOM_REMOVE, new INGAME::RemoveRoomTask{ t->room } );
+					PushTask( INGAME::ETaskType::RoomRemove, new INGAME::RemoveRoomTask{ t->m_room } );
 					break;
 				}
-				packet.seeker = t->room->userSessions[ picked ]->key;
+				packet.m_seeker = t->m_room->m_userSessions[ picked ]->m_key;
 
 				// 유저들에게 라운드 준비를 알림
-				BroadCastPacket( t->room, &packet );
-				TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + READY_TIME, INGAME::TASK_TYPE::ROUND_READY, new INGAME::RoundReadyTask{ t->room, t->room->currentRound } );
+				_BroadCastPacket( t->m_room, &packet );
+				TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + READY_TIME, INGAME::ETaskType::RoundReady,
+					new INGAME::RoundReadyTask{ t->m_room, t->m_room->m_currentRound } );
 				PRINT_LOG( "게임 상태 - 라운드 준비 상태로 전환" );
 				delete task.second;
 			}
 		}
 		break;
-		case INGAME::TASK_TYPE::ROUND_READY:
+		case INGAME::ETaskType::RoundReady:
 		{
 			INGAME::RoundReadyTask* t = reinterpret_cast<INGAME::RoundReadyTask*>( task.second );
-			if ( t->room != nullptr )
+			if ( t->m_room != nullptr )
 			{
 				// 다른 사유로 라운드가 종료되지 않았다면
-				if ( t->currentRound == t->room->currentRound )
+				if ( t->m_currentRound == t->m_room->m_currentRound )
 				{
-					for ( auto& pl : t->room->userInfo )
+					for ( auto& pl : t->m_room->m_userInfo )
 					{
 						// 플레이어 정보 초기화
-						pl.second.isAlive = true;
+						pl.second.m_isAlive = true;
 					}
-					PACKET::SERVER_TO_CLIENT::RoundStartPacket packet;
+					Packet::ServerToClient::RoundStartPacket packet;
 
 					// 유저들에게 라운드 시작을 알림
-					BroadCastPacket( t->room, &packet );
+					_BroadCastPacket( t->m_room, &packet );
 
-					TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + GAME_TIME, INGAME::TASK_TYPE::ROUND_END, new INGAME::RoundEndTask{ t->room, t->room->currentRound } );
+					TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + GAME_TIME, INGAME::ETaskType::RoundEnd,
+						new INGAME::RoundEndTask{ t->m_room, t->m_room->m_currentRound } );
 					PRINT_LOG( "게임 상태 - 라운드 진행 상태로 전환" );
 				}
 				delete task.second;
 			}
 		}
 		break;
-		case INGAME::TASK_TYPE::ROUND_END:
+		case INGAME::ETaskType::RoundEnd:
 		{
 			INGAME::RoundEndTask* t = reinterpret_cast<INGAME::RoundEndTask*>( task.second );
-			if ( t->room != nullptr )
+			if ( t->m_room != nullptr )
 			{
 				// 다른 사유로 라운드가 종료되지 않았다면
-				if ( t->currentRound == t->room->currentRound )
+				if ( t->m_currentRound == t->m_room->m_currentRound )
 				{
 					// 설정된 라운드가 끝나지 않았다면
-					if ( t->room->currentRound < MAX_ROUND )
+					if ( t->m_room->m_currentRound < MAX_ROUND )
 					{
-						t->room->currentRound++;
+						t->m_room->m_currentRound++;
 
-						PACKET::SERVER_TO_CLIENT::RoundReadyPacket packet;
+						Packet::ServerToClient::RoundReadyPacket packet;
 
-						int picked = PickSeeker( t->room );
+						int picked = _PickSeeker( t->m_room );
 
 						if ( picked == -1 )
 						{
 							// 게임 종료 처리 및 방 제거 태스크 등록
-							PushTask( INGAME::TASK_TYPE::ROOM_REMOVE, new INGAME::RemoveRoomTask{ t->room } );
+							PushTask( INGAME::ETaskType::RoomRemove, new INGAME::RemoveRoomTask{ t->m_room } );
 							break;
 						}
-						packet.seeker = t->room->userSessions[ picked ]->key;
+						packet.m_seeker = t->m_room->m_userSessions[ picked ]->m_key;
 
 						// 유저들에게 라운드 준비를 알림
-						BroadCastPacket( t->room, &packet );
+						_BroadCastPacket( t->m_room, &packet );
 
-						TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + READY_TIME, INGAME::TASK_TYPE::ROUND_READY, new INGAME::RoundReadyTask{ t->room, t->room->currentRound } );
+						TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + READY_TIME, INGAME::ETaskType::RoundReady,
+							new INGAME::RoundReadyTask{ t->m_room, t->m_room->m_currentRound } );
 						PRINT_LOG( "게임 상태 - 다음 라운드 시작됨" );
 					}
 					else
 					{
-						t->room->currentRound++;
+						t->m_room->m_currentRound++;
 
-						PACKET::SERVER_TO_CLIENT::GameEndPacket packet;
+						Packet::ServerToClient::GameEndPacket packet;
 
 						// 로비에 플레이어 등록
-						for ( auto& pl : t->room->userSessions )
+						for ( auto& pl : t->m_room->m_userSessions )
 						{
-							LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_ENTERLOBBY, new LOBBY::EnterLobbyTask{ pl } );
+							LobbyManager::GetInstance().PushTask( Lobby::ETaskType::EnterLobby, new Lobby::EnterLobbyTask{ pl } );
 						}
 
-						BroadCastPacket( t->room, &packet );
+						_BroadCastPacket( t->m_room, &packet );
 
 						// 게임 종료 처리 및 방 제거 태스크 등록
-						TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + GAME_TIME, INGAME::TASK_TYPE::ROOM_REMOVE, new INGAME::RemoveRoomTask{ t->room } );
+						TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + GAME_TIME, INGAME::ETaskType::RoomRemove,
+							new INGAME::RemoveRoomTask{ t->m_room } );
 						PRINT_LOG( "게임 상태 - 종료" );
 					}
 					
@@ -164,38 +170,38 @@ void GameManager::ThreadFunc()
 			}
 		}
 		break;
-		case INGAME::TASK_TYPE::ROOM_REMOVE:
+		case INGAME::ETaskType::RoomRemove:
 		{
 			INGAME::RemoveRoomTask* t = reinterpret_cast<INGAME::RemoveRoomTask*>( task.second );
-			if ( t->room != nullptr )
+			if ( t->m_room != nullptr )
 			{
-				m_rooms.erase( t->room->roomNum );
-				delete ( t->room );
+				m_rooms.erase( t->m_room->m_roomNum );
+				delete ( t->m_room );
 				PRINT_LOG( "방 제거 요청 받음" );
 
 				delete task.second;
 			}
 		}
 		break;
-		case INGAME::TASK_TYPE::MOVE_PLAYER:
+		case INGAME::ETaskType::MovePlayer:
 		{
 			INGAME::MovePlayerTask* t = reinterpret_cast<INGAME::MovePlayerTask*>( task.second );
-			if ( t->session != nullptr )
+			if ( t->m_session != nullptr )
 			{
-				if ( t->session->roomIndex != -1 )
+				if ( t->m_session->m_roomIndex != -1 )
 				{
-					auto& user = m_rooms[ t->session->roomIndex ]->userInfo[ t->index ];
-					if ( CheckPlayer( user ) )
+					auto& user = m_rooms[ t->m_session->m_roomIndex ]->m_userInfo[ t->m_index ];
+					if ( _CheckPlayer( user ) )
 					{
-						PACKET::SERVER_TO_CLIENT::MovePlayerPacket packet;
-						packet.index = t->index;
-						user.x = packet.x = t->x;
-						user.y = packet.y = t->y;
-						user.z = packet.z = t->z;
-						user.angle = packet.angle = t->angle;
+						Packet::ServerToClient::MovePlayerPacket packet;
+						packet.m_index = t->m_index;
+						user.m_x = packet.m_x = t->m_x;
+						user.m_y = packet.m_y = t->m_y;
+						user.m_z = packet.m_z = t->m_z;
+						user.m_angle = packet.m_angle = t->m_angle;
 
 						// 움직인 플레이어를 제외하고 전송
-						BroadCastPacketExceptMe( m_rooms[ t->session->roomIndex ], &packet, t->index );
+						_BroadCastPacketExceptMe( m_rooms[ t->m_session->m_roomIndex ], &packet, t->m_index );
 					}
 				}
 
@@ -203,55 +209,55 @@ void GameManager::ThreadFunc()
 			}
 		}
 		break;
-		case INGAME::TASK_TYPE::ATTACK_PLAYER:
+		case INGAME::ETaskType::AttackPlayer:
 		{
 			INGAME::AttackPlayerTask* t = reinterpret_cast<INGAME::AttackPlayerTask*>( task.second );
-			if ( t->session != nullptr )
+			if ( t->m_session != nullptr )
 			{
-				if ( t->session->roomIndex != -1 )
+				if ( t->m_session->m_roomIndex != -1 )
 				{
-					auto& user = m_rooms[ t->session->roomIndex ]->userInfo[ t->index ];
-					if ( CheckPlayer( user ) )
+					auto& user = m_rooms[ t->m_session->m_roomIndex ]->m_userInfo[ t->m_index ];
+					if ( _CheckPlayer( user ) )
 					{
-						PACKET::SERVER_TO_CLIENT::AttackPlayerPacket packet;
-						packet.index = t->index;
+						Packet::ServerToClient::AttackPlayerPacket packet;
+						packet.m_index = t->m_index;
 
 						// 공격한 플레이어를 제외하고 전송
-						BroadCastPacketExceptMe( m_rooms[ t->session->roomIndex ], &packet, t->index );
+						_BroadCastPacketExceptMe( m_rooms[ t->m_session->m_roomIndex ], &packet, t->m_index );
 
-						for ( auto& pl : m_rooms[ t->session->roomIndex ]->userInfo )
+						for ( auto& pl : m_rooms[ t->m_session->m_roomIndex ]->m_userInfo )
 						{
-							if ( pl.first == t->index ) continue;
-							if ( !pl.second.isAlive ) continue;
+							if ( pl.first == t->m_index ) continue;
+							if ( !pl.second.m_isAlive ) continue;
 							// 거리 검사
-							double dx = pl.second.x - user.x;
-							double dy = pl.second.y - user.y;
+							double dx = pl.second.m_x - user.m_x;
+							double dy = pl.second.m_y - user.m_y;
 							double distance = sqrt( pow( dx, 2 ) + pow( dy, 2 ) );
 
 							if ( distance < ATTACK_RANGE )
 							{
 								dx = dx / distance;
 								dy = dy / distance;
-								double x = cos( ( user.angle ) * 3.14 / 180 );
-								double y = sin( ( user.angle ) * 3.14 / 180 );
+								double x = cos( ( user.m_angle ) * 3.14 / 180 );
+								double y = sin( ( user.m_angle ) * 3.14 / 180 );
 								// 공격자의 방향 벡터와 각 물체까지의 방향벡터의 사잇각 계산
 								double angle = atan2( x * dy - dx * y, dx * x + dy * y ) * 180 / 3.14;
 								if ( angle <= ATTACK_ANGLE && angle >= -ATTACK_ANGLE )
 								{
-									PACKET::SERVER_TO_CLIENT::KillPlayerPacket p;
-									p.killer = t->index;
-									p.victim = pl.second.userNum;
-									pl.second.isAlive = false;
-									m_rooms[ t->session->roomIndex ]->aliveHider -= 1;
+									Packet::ServerToClient::KillPlayerPacket p;
+									p.m_killer = t->m_index;
+									p.m_victim = pl.second.m_userNum;
+									pl.second.m_isAlive = false;
+									m_rooms[ t->m_session->m_roomIndex ]->m_aliveHider -= 1;
 
-									BroadCastPacket( m_rooms[ t->session->roomIndex ], &p );
+									_BroadCastPacket( m_rooms[ t->m_session->m_roomIndex ], &p );
 									PRINT_LOG( "공격 성공 패킷 전송됨" );
 
-									if ( m_rooms[ t->session->roomIndex ]->aliveHider == 0 )
+									if ( m_rooms[ t->m_session->m_roomIndex ]->m_aliveHider == 0 )
 									{
 										// 새로운 라운드 시작
-										TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + INTERVAL_TIME, INGAME::TASK_TYPE::ROUND_END,
-											new INGAME::RoundEndTask{ m_rooms[ t->session->roomIndex ], m_rooms[ t->session->roomIndex ]->currentRound } );
+										TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + INTERVAL_TIME, INGAME::ETaskType::RoundEnd,
+											new INGAME::RoundEndTask{ m_rooms[ t->m_session->m_roomIndex ], m_rooms[ t->m_session->m_roomIndex ]->m_currentRound } );
 									}
 								}
 							}
@@ -262,21 +268,21 @@ void GameManager::ThreadFunc()
 			}
 		}
 		break;
-		case INGAME::TASK_TYPE::REMOVE_PLAYER:
+		case INGAME::ETaskType::RemovePlayer:
 		{
 			INGAME::RemovePlayerTask* t = reinterpret_cast<INGAME::RemovePlayerTask*>( task.second );
-			if ( t->session != nullptr )
+			if ( t->m_session != nullptr )
 			{
-				if ( t->session->roomIndex != -1 )
+				if ( t->m_session->m_roomIndex != -1 )
 				{
-					m_rooms[ t->roomindex ]->userInfo.erase( t->index );
-					m_rooms[ t->roomindex ]->userSessions.erase( std::remove( m_rooms[ t->roomindex ]->userSessions.begin(),
-						m_rooms[ t->roomindex ]->userSessions.end(), t->session ) );
+					m_rooms[ t->m_roomindex ]->m_userInfo.erase( t->m_index );
+					m_rooms[ t->m_roomindex ]->m_userSessions.erase( std::remove( m_rooms[ t->m_roomindex ]->m_userSessions.begin(),
+						m_rooms[ t->m_roomindex ]->m_userSessions.end(), t->m_session ) );
 					PRINT_LOG( "플레이어 제거 요청 받음" );
-					PACKET::SERVER_TO_CLIENT::RemovePlayerIngamePacket packet;
-					packet.index = t->index;
+					Packet::ServerToClient::RemovePlayerIngamePacket packet;
+					packet.m_index = t->m_index;
 
-					BroadCastPacket( m_rooms[ t->roomindex ], &packet );
+					_BroadCastPacket( m_rooms[ t->m_roomindex ], &packet );
 				}
 				delete task.second;
 			}
@@ -286,48 +292,48 @@ void GameManager::ThreadFunc()
 	}
 }
 
-void GameManager::BroadCastPacket( GameRoom* room, void* packet )
+void GameManager::_BroadCastPacket( GameRoom* room, void* packet )
 {
 	if ( room == nullptr ) return;
-	for ( auto& pl : room->userSessions )
+	for ( auto& pl : room->m_userSessions )
 	{
-		MainServer::GetInstance().SendPacket( pl->socket, packet );
+		MainServer::GetInstance().SendPacket( pl->m_socket, packet );
 	}
 }
 
-void GameManager::BroadCastPacketExceptMe( GameRoom* room, void* packet, int index )
+void GameManager::_BroadCastPacketExceptMe( GameRoom* room, void* packet, int index )
 {
 	if ( room == nullptr ) return;
-	for ( auto& pl : room->userSessions )
+	for ( auto& pl : room->m_userSessions )
 	{
-		if ( pl->key == index ) continue;
-		MainServer::GetInstance().SendPacket( pl->socket, packet );
+		if ( pl->m_key == index ) continue;
+		MainServer::GetInstance().SendPacket( pl->m_socket, packet );
 	}
 }
 
-int GameManager::PickSeeker( GameRoom* room )
+int GameManager::_PickSeeker( GameRoom* room )
 {
-	if ( room == nullptr ) return -1;
-	if ( room->userSessions.size() == 0 ) return -1;
-	if ( room->userSessions.size() == 1 ) return 0;
-	int temp = rand() % room->userSessions.size();
+	if ( room == nullptr )					return -1;
+	if ( room->m_userSessions.size() == 0 )	return -1;
+	if ( room->m_userSessions.size() == 1 )	return 0;
+	int temp = rand() % room->m_userSessions.size();
 	// 같은 사람은 술래가 되지 않도록
-	while ( temp == room->currentSeeker )
+	while ( temp == room->m_currentSeeker )
 	{
-		temp = rand() % room->userSessions.size();
+		temp = rand() % room->m_userSessions.size();
 	}
-	room->currentSeeker = temp;
-	room->aliveHider = room->userSessions.size() - SEEKER_COUNT;
+	room->m_currentSeeker = temp;
+	room->m_aliveHider = room->m_userSessions.size() - SEEKER_COUNT;
 	return temp;
 }
 
-bool GameManager::CheckPlayer( UserInfo& info )
+bool GameManager::_CheckPlayer( UserInfo& info )
 {
-	if ( info.isAlive )							return true;
+	if ( info.m_isAlive )							return true;
 	else										return false;
 }
 
-unsigned int GameManager::GetNewRoomNum()
+unsigned int GameManager::_GetNewRoomNum()
 {
 	for ( int i = 0; ; i++ )
 	{
