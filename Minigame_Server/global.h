@@ -39,14 +39,6 @@ enum class OP_TYPE
 	OP_RECV, OP_SEND, OP_ACCEPT
 };
 
-enum class GAME_STATE
-{
-	ROUND_WAIT,
-	ROUND_READY,
-	ROUND_START,
-	GAME_END,
-};
-
 struct OVERLAPPED_EXTENDED
 {
 	WSAOVERLAPPED overlapped;
@@ -73,7 +65,6 @@ struct UserInfo
 	int userNum;
 	wchar_t nickname[ 10 ] = {};
 	bool isAlive = true;
-	bool isFrozen = false;
 	float x = 0;
 	float y = 0;
 	float z = 0;
@@ -85,7 +76,6 @@ struct UserInfo
 struct GameRoom
 {
 	std::vector< Session* > userSessions;
-	GAME_STATE state = GAME_STATE::ROUND_WAIT;
 	std::unordered_map <int, UserInfo> userInfo;
 	unsigned int roomNum = 0;
 	int currentRound = 1;
@@ -172,8 +162,6 @@ namespace INGAME
 		MOVE_PLAYER,
 		ATTACK_PLAYER,
 		REMOVE_PLAYER,
-		FREEZE,
-		UNFREEZE,
 	};
 
 	struct CreateRoomTask
@@ -225,19 +213,6 @@ namespace INGAME
 		int index;
 		Session* session;
 	};
-
-	struct FreezeTask
-	{
-		Session* session;
-		int index;
-	};
-
-	struct UnfreezeTask
-	{
-		Session* session;
-		int index;
-		int target;
-	};
 }
 
 struct TimerEvent
@@ -268,9 +243,6 @@ namespace PACKETINFO
 		REMOVEPLAYERINGAME,
 		KILLPLAYER,
 		GAMEEND,
-		SETHP,
-		FREEZE,
-		UNFREEZE,
 		SETPOSITION,
 	};
 
@@ -282,8 +254,6 @@ namespace PACKETINFO
 		STOPMATCHING,
 		MOVEPLAYER,
 		ATTACK,
-		FREEZE,
-		UNFREEZE,
 	};
 }
 
@@ -386,13 +356,6 @@ namespace PACKET
 			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::GAMEEND;
 		};
 
-		struct SetHpPacket
-		{
-			unsigned char size = sizeof( SetHpPacket );
-			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::SETHP;
-			int hp;
-		};
-
 		struct SetPositionPacket
 		{
 			unsigned char size = sizeof( SetPositionPacket );
@@ -400,20 +363,6 @@ namespace PACKET
 			float x;
 			float y;
 			float z;
-		};
-
-		struct FreezePacket
-		{
-			unsigned char size = sizeof( FreezePacket );
-			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::FREEZE;
-			int index;
-		};
-
-		struct UnfreezePacket
-		{
-			unsigned char size = sizeof( UnfreezePacket );
-			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::UNFREEZE;
-			int index;
 		};
 	}
 
@@ -461,18 +410,6 @@ namespace PACKET
 			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::ATTACK;
 		};
 
-		struct FreezePacket
-		{
-			unsigned char size = sizeof( FreezePacket );
-			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::FREEZE;
-		};
-
-		struct UnfreezePacket
-		{
-			unsigned char size = sizeof( UnfreezePacket );
-			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::UNFREEZE;
-			int target;
-		};
 	}
 }
 #pragma pack(pop)

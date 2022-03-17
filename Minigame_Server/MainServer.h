@@ -5,7 +5,6 @@
 #include "Slngleton.h"
 #include "global.h"
 #include <thread>
-#include <vector>
 
 
 class MainServer : public Base::TSingleton < MainServer >

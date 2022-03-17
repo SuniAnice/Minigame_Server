@@ -96,7 +96,6 @@ void GameManager::ThreadFunc()
 					{
 						// 플레이어 정보 초기화
 						pl.second.isAlive = true;
-						pl.second.isFrozen = false;
 					}
 					PACKET::SERVER_TO_CLIENT::RoundStartPacket packet;
 
@@ -283,46 +282,6 @@ void GameManager::ThreadFunc()
 			}
 		}
 		break;
-		case INGAME::TASK_TYPE::FREEZE:
-		{
-			INGAME::FreezeTask* t = reinterpret_cast<INGAME::FreezeTask*>( task.second );
-			if ( t != nullptr )
-			{
-				auto &user = m_rooms[ t->session->roomIndex ]->userInfo[ t->index ];
-				if ( CheckPlayer( user ) )
-				{
-					user.isFrozen = true;
-
-					PACKET::SERVER_TO_CLIENT::FreezePacket packet;
-					packet.index = t->index;
-
-					BroadCastPacket( m_rooms[ t->session->roomIndex ], &packet );
-				}
-
-				delete task.second;
-			}
-		}
-		break;
-		case INGAME::TASK_TYPE::UNFREEZE:
-		{
-			INGAME::UnfreezeTask* t = reinterpret_cast<INGAME::UnfreezeTask*>( task.second );
-			if ( t != nullptr )
-			{
-				auto& user = m_rooms[ t->session->roomIndex ]->userInfo[ t->index ];
-				if ( CheckPlayer( user ) )
-				{
-					m_rooms[ t->session->roomIndex ]->userInfo[ t->target ].isFrozen = false;
-
-					PACKET::SERVER_TO_CLIENT::UnfreezePacket packet;
-					packet.index = t->target;
-
-					BroadCastPacket( m_rooms[ t->session->roomIndex ], &packet );
-				}
-
-				delete task.second;
-			}
-		}
-		break;
 		}
 	}
 }
@@ -364,7 +323,7 @@ int GameManager::PickSeeker( GameRoom* room )
 
 bool GameManager::CheckPlayer( UserInfo& info )
 {
-	if ( info.isAlive && !info.isFrozen )		return true;
+	if ( info.isAlive )							return true;
 	else										return false;
 }
 
