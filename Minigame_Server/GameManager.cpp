@@ -151,6 +151,10 @@ void GameManager::ThreadFunc()
 							LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_ENTERLOBBY, new LOBBY::EnterLobbyTask{ pl } );
 						}
 
+						PACKET::SERVER_TO_CLIENT::GameEndPacket packet;
+
+						BroadCastPacket( t->room, &packet );
+
 						// 게임 종료 처리 및 방 제거 태스크 등록
 						TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + GAME_TIME, INGAME::TASK_TYPE::ROOM_REMOVE, new INGAME::RemoveRoomTask{ t->room } );
 						PRINT_LOG( "게임 상태 - 종료" );
@@ -179,20 +183,22 @@ void GameManager::ThreadFunc()
 			INGAME::MovePlayerTask* t = reinterpret_cast<INGAME::MovePlayerTask*>( task.second );
 			if ( t != nullptr )
 			{
-				auto &user = m_rooms[ t->session->roomIndex ]->userInfo[ t->index ];
-				if ( CheckPlayer( user ) )
+				if ( t->session->roomIndex != -1 )
 				{
-					PACKET::SERVER_TO_CLIENT::MovePlayerPacket packet;
-					packet.index = t->index;
-					user.x = packet.x = t->x;
-					user.y = packet.y = t->y;
-					user.z = packet.z = t->z;
-					user.angle = packet.angle = t->angle;
+					auto& user = m_rooms[ t->session->roomIndex ]->userInfo[ t->index ];
+					if ( CheckPlayer( user ) )
+					{
+						PACKET::SERVER_TO_CLIENT::MovePlayerPacket packet;
+						packet.index = t->index;
+						user.x = packet.x = t->x;
+						user.y = packet.y = t->y;
+						user.z = packet.z = t->z;
+						user.angle = packet.angle = t->angle;
 
-					// 움직인 플레이어를 제외하고 전송
-					BroadCastPacketExceptMe( m_rooms[ t->session->roomIndex ], &packet, t->index );
+						// 움직인 플레이어를 제외하고 전송
+						BroadCastPacketExceptMe( m_rooms[ t->session->roomIndex ], &packet, t->index );
+					}
 				}
-				
 
 				delete task.second;
 			}
@@ -203,54 +209,56 @@ void GameManager::ThreadFunc()
 			INGAME::AttackPlayerTask* t = reinterpret_cast<INGAME::AttackPlayerTask*>( task.second );
 			if ( t != nullptr )
 			{
-				auto &user = m_rooms[ t->session->roomIndex ]->userInfo[ t->index ];
-				if ( CheckPlayer( user ) )
+				if ( t->session->roomIndex != -1 )
 				{
-					PACKET::SERVER_TO_CLIENT::AttackPlayerPacket packet;
-					packet.index = t->index;
-
-					// 공격한 플레이어를 제외하고 전송
-					BroadCastPacketExceptMe( m_rooms[ t->session->roomIndex ], &packet, t->index );
-
-					for ( auto& pl : m_rooms[ t->session->roomIndex ]->userInfo )
+					auto& user = m_rooms[ t->session->roomIndex ]->userInfo[ t->index ];
+					if ( CheckPlayer( user ) )
 					{
-						if ( pl.first == t->index ) continue;
-						if ( !pl.second.isAlive ) continue;
-						// 거리 검사
-						double dx = pl.second.x - user.x;
-						double dy = pl.second.y - user.y;
-						double distance = sqrt( pow( dx, 2 ) + pow( dy, 2 ) );
+						PACKET::SERVER_TO_CLIENT::AttackPlayerPacket packet;
+						packet.index = t->index;
 
-						if ( distance < ATTACK_RANGE )
+						// 공격한 플레이어를 제외하고 전송
+						BroadCastPacketExceptMe( m_rooms[ t->session->roomIndex ], &packet, t->index );
+
+						for ( auto& pl : m_rooms[ t->session->roomIndex ]->userInfo )
 						{
-							dx = dx / distance;
-							dy = dy / distance;
-							double x = cos( ( user.angle ) * 3.14 / 180 );
-							double y = sin( ( user.angle ) * 3.14 / 180 );
-							// 공격자의 방향 벡터와 각 물체까지의 방향벡터의 사잇각 계산
-							double angle = atan2( x * dy - dx * y, dx * x + dy * y ) * 180 / 3.14;
-							if ( angle <= ATTACK_ANGLE && angle >= -ATTACK_ANGLE )
+							if ( pl.first == t->index ) continue;
+							if ( !pl.second.isAlive ) continue;
+							// 거리 검사
+							double dx = pl.second.x - user.x;
+							double dy = pl.second.y - user.y;
+							double distance = sqrt( pow( dx, 2 ) + pow( dy, 2 ) );
+
+							if ( distance < ATTACK_RANGE )
 							{
-								PACKET::SERVER_TO_CLIENT::KillPlayerPacket p;
-								p.killer = t->index;
-								p.victim = pl.second.userNum;
-								pl.second.isAlive = false;
-								m_rooms[ t->session->roomIndex ]->aliveHider -= 1;
-
-								BroadCastPacket( m_rooms[ t->session->roomIndex ], &p );
-								PRINT_LOG( "공격 성공 패킷 전송됨" );
-
-								if ( m_rooms[ t->session->roomIndex ]->aliveHider == 0 )
+								dx = dx / distance;
+								dy = dy / distance;
+								double x = cos( ( user.angle ) * 3.14 / 180 );
+								double y = sin( ( user.angle ) * 3.14 / 180 );
+								// 공격자의 방향 벡터와 각 물체까지의 방향벡터의 사잇각 계산
+								double angle = atan2( x * dy - dx * y, dx * x + dy * y ) * 180 / 3.14;
+								if ( angle <= ATTACK_ANGLE && angle >= -ATTACK_ANGLE )
 								{
-									// 새로운 라운드 시작
-									TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + INTERVAL_TIME, INGAME::TASK_TYPE::ROUND_END,
-										new INGAME::RoundEndTask{ m_rooms[ t->session->roomIndex ], m_rooms[ t->session->roomIndex ]->currentRound } );
+									PACKET::SERVER_TO_CLIENT::KillPlayerPacket p;
+									p.killer = t->index;
+									p.victim = pl.second.userNum;
+									pl.second.isAlive = false;
+									m_rooms[ t->session->roomIndex ]->aliveHider -= 1;
+
+									BroadCastPacket( m_rooms[ t->session->roomIndex ], &p );
+									PRINT_LOG( "공격 성공 패킷 전송됨" );
+
+									if ( m_rooms[ t->session->roomIndex ]->aliveHider == 0 )
+									{
+										// 새로운 라운드 시작
+										TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + INTERVAL_TIME, INGAME::TASK_TYPE::ROUND_END,
+											new INGAME::RoundEndTask{ m_rooms[ t->session->roomIndex ], m_rooms[ t->session->roomIndex ]->currentRound } );
+									}
 								}
 							}
 						}
 					}
 				}
-
 				delete task.second;
 			}
 		}
@@ -260,15 +268,17 @@ void GameManager::ThreadFunc()
 			INGAME::RemovePlayerTask* t = reinterpret_cast<INGAME::RemovePlayerTask*>( task.second );
 			if ( t != nullptr )
 			{
-				m_rooms[ t->roomindex ]->userInfo.erase( t->index );
-				m_rooms[ t->roomindex ]->userSessions.erase( std::remove( m_rooms[ t->roomindex ]->userSessions.begin(),
-					m_rooms[ t->roomindex ]->userSessions.end(), t->session ) );
-				PRINT_LOG( "플레이어 제거 요청 받음" );
-				PACKET::SERVER_TO_CLIENT::RemovePlayerIngamePacket packet;
-				packet.index = t->index;
+				if ( t->session->roomIndex != -1 )
+				{
+					m_rooms[ t->roomindex ]->userInfo.erase( t->index );
+					m_rooms[ t->roomindex ]->userSessions.erase( std::remove( m_rooms[ t->roomindex ]->userSessions.begin(),
+						m_rooms[ t->roomindex ]->userSessions.end(), t->session ) );
+					PRINT_LOG( "플레이어 제거 요청 받음" );
+					PACKET::SERVER_TO_CLIENT::RemovePlayerIngamePacket packet;
+					packet.index = t->index;
 
-				BroadCastPacket( m_rooms[ t->roomindex ], &packet );
-
+					BroadCastPacket( m_rooms[ t->roomindex ], &packet );
+				}
 				delete task.second;
 			}
 		}

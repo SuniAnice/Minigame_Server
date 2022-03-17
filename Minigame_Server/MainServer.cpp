@@ -135,7 +135,7 @@ void MainServer::WorkerFunc()
 		case OP_TYPE::OP_RECV:
 		{
 			Session* session = LobbyManager::GetInstance().GetSession( key );
-
+			if ( session == nullptr ) continue;
 			unsigned char* packet_ptr = overEx->packetBuffer;
 			int data_bytes = bytes_recved + session->prevSize;
 			int packet_size = packet_ptr[ 0 ];
