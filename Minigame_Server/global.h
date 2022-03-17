@@ -29,7 +29,7 @@ constexpr size_t MAX_USER = 100000;			// 최대 동접자
 constexpr seconds WAIT_TIME = 10s;			// 라운드 대기 시간
 constexpr seconds READY_TIME = 30s;			// 라운드 준비 시간
 constexpr seconds GAME_TIME = 180s;			// 라운드 진행 시간
-constexpr double ATTACK_RANGE = 100;		// 공격 사정거리
+constexpr double ATTACK_RANGE = 500;		// 공격 사정거리
 constexpr double ATTACK_ANGLE = 90;			// 공격 각도
 
 
@@ -86,6 +86,7 @@ struct GameRoom
 	std::vector< Session* > userSessions;
 	GAME_STATE state = GAME_STATE::ROUND_WAIT;
 	std::unordered_map <int, UserInfo> userInfo;
+	unsigned int roomNum = 0;
 	int currentRound = 1;
 	int currentSeeker = -1;
 	int aliveHider = -1;

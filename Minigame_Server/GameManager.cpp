@@ -16,7 +16,7 @@ GameManager::~GameManager()
 {
 	for ( auto& room : m_rooms )
 	{
-		delete room;
+		delete room.second;
 	}
 }
 
@@ -37,7 +37,9 @@ void GameManager::ThreadFunc()
 			INGAME::CreateRoomTask* t = reinterpret_cast< INGAME::CreateRoomTask* >( task.second );
 			if ( t != nullptr )
 			{
-				m_rooms.emplace_back( t->room );
+				unsigned int roomNum = GetNewRoomNum();
+				m_rooms[ roomNum ] = ( t->room );
+				m_rooms[ roomNum ]->roomNum = roomNum;
 				PACKET::SERVER_TO_CLIENT::GameMatchedPacket packet;
 				for ( int i = 0; i < MAX_PLAYER_IN_ROOM; i++ )
 				{
@@ -49,7 +51,7 @@ void GameManager::ThreadFunc()
 				// 로비에서 플레이어 제거
 				for ( auto& pl : t->room->userSessions )
 				{
-					LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_EXITLOBBY, new LOBBY::ExitLobbyTask{ pl, m_rooms.size() - 1 } );
+					LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_EXITLOBBY, new LOBBY::ExitLobbyTask{ pl, roomNum } );
 				}
 
 				TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + WAIT_TIME, INGAME::TASK_TYPE::ROUND_WAIT, new INGAME::RoundWaitTask{ t->room } );
@@ -164,7 +166,7 @@ void GameManager::ThreadFunc()
 			INGAME::RemoveRoomTask* t = reinterpret_cast<INGAME::RemoveRoomTask*>( task.second );
 			if ( t != nullptr )
 			{
-				m_rooms.erase( std::remove( m_rooms.begin(), m_rooms.end(), t->room ) );
+				m_rooms.erase( t->room->roomNum );
 				delete ( t->room );
 				PRINT_LOG( "방 제거 요청 받음" );
 
@@ -177,7 +179,7 @@ void GameManager::ThreadFunc()
 			INGAME::MovePlayerTask* t = reinterpret_cast<INGAME::MovePlayerTask*>( task.second );
 			if ( t != nullptr )
 			{
-				auto user = m_rooms[ t->session->roomIndex ]->userInfo[ t->index ];
+				auto &user = m_rooms[ t->session->roomIndex ]->userInfo[ t->index ];
 				if ( CheckPlayer( user ) )
 				{
 					PACKET::SERVER_TO_CLIENT::MovePlayerPacket packet;
@@ -201,7 +203,7 @@ void GameManager::ThreadFunc()
 			INGAME::AttackPlayerTask* t = reinterpret_cast<INGAME::AttackPlayerTask*>( task.second );
 			if ( t != nullptr )
 			{
-				auto user = m_rooms[ t->session->roomIndex ]->userInfo[ t->index ];
+				auto &user = m_rooms[ t->session->roomIndex ]->userInfo[ t->index ];
 				if ( CheckPlayer( user ) )
 				{
 					PACKET::SERVER_TO_CLIENT::AttackPlayerPacket packet;
@@ -259,7 +261,7 @@ void GameManager::ThreadFunc()
 			INGAME::FreezeTask* t = reinterpret_cast<INGAME::FreezeTask*>( task.second );
 			if ( t != nullptr )
 			{
-				auto user = m_rooms[ t->session->roomIndex ]->userInfo[ t->index ];
+				auto &user = m_rooms[ t->session->roomIndex ]->userInfo[ t->index ];
 				if ( CheckPlayer( user ) )
 				{
 					user.isFrozen = true;
@@ -279,7 +281,7 @@ void GameManager::ThreadFunc()
 			INGAME::UnfreezeTask* t = reinterpret_cast<INGAME::UnfreezeTask*>( task.second );
 			if ( t != nullptr )
 			{
-				auto user = m_rooms[ t->session->roomIndex ]->userInfo[ t->index ];
+				auto& user = m_rooms[ t->session->roomIndex ]->userInfo[ t->index ];
 				if ( CheckPlayer( user ) )
 				{
 					m_rooms[ t->session->roomIndex ]->userInfo[ t->target ].isFrozen = false;
@@ -334,4 +336,12 @@ bool GameManager::CheckPlayer( UserInfo& info )
 {
 	if ( info.isAlive && !info.isFrozen )		return true;
 	else										return false;
+}
+
+unsigned int GameManager::GetNewRoomNum()
+{
+	for ( int i = 0; ; i++ )
+	{
+		if ( !m_rooms.count( i ) ) return i;
+	}
 }

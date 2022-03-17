@@ -15,7 +15,7 @@ public:
 
 	virtual void ThreadFunc();
 private:
-	std::vector < GameRoom* > m_rooms;
+	std::unordered_map < unsigned int, GameRoom* > m_rooms;
 
 	void BroadCastPacket( GameRoom* room, void* packet );
 
@@ -24,4 +24,6 @@ private:
 	int PickSeeker( GameRoom* room );
 
 	bool CheckPlayer( UserInfo& info );
+
+	unsigned int GetNewRoomNum();
 };
