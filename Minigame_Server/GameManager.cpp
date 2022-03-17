@@ -208,6 +208,10 @@ void GameManager::ThreadFunc()
 				m_rooms[ t->roomindex ]->userSessions.erase( std::remove( m_rooms[ t->roomindex ]->userSessions.begin(),
 					m_rooms[ t->roomindex ]->userSessions.end(), t->session ) );
 				PRINT_LOG( "플레이어 제거 요청 받음" );
+				PACKET::SERVER_TO_CLIENT::RemovePlayerIngamePacket packet;
+				packet.index = t->index;
+
+				BroadCastPacket( m_rooms[ t->roomindex ], &packet );
 
 				delete task.second;
 			}
@@ -237,6 +241,7 @@ void GameManager::BroadCastPacketExceptMe( GameRoom* room, void* packet, int ind
 int GameManager::PickSeeker( GameRoom* room )
 {
 	if ( room->userSessions.size() == 0 ) return -1;
+	if ( room->userSessions.size() == 1 ) return 0;
 	int temp = rand() % room->userSessions.size();
 	// 같은 사람은 술래가 되지 않도록
 	while ( temp == room->currentSeeker )

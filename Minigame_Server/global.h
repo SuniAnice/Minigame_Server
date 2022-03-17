@@ -241,6 +241,7 @@ namespace PACKETINFO
 		ROUNDSTART,
 		MOVEPLAYER,
 		ATTACK,
+		REMOVEPLAYERINGAME,
 	};
 
 	enum class CLIENT_TO_SERVER : unsigned char
@@ -329,6 +330,13 @@ namespace PACKET
 		{
 			unsigned char size = sizeof( AttackPlayerPacket );
 			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::ATTACK;
+			int index;
+		};
+
+		struct RemovePlayerIngamePacket
+		{
+			unsigned char size = sizeof( RemovePlayerIngamePacket );
+			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::REMOVEPLAYERINGAME;
 			int index;
 		};
 	}
