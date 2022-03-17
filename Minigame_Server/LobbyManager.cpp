@@ -32,7 +32,9 @@ void LobbyManager::ThreadFunc()
 				int id = GetNewId( over->socket );
 				CreateIoCompletionPort( reinterpret_cast<HANDLE>( over->socket ), m_handle, id, 0 );
 				m_users[ id ]->overlapped = *over;
-				PRINT_LOG( id + "번 플레이어 Accept 성공" );
+				m_users[ id ]->overlapped.opType = OP_TYPE::OP_RECV;
+				m_users[ id ]->prevSize = 0;
+				PRINT_LOG( "플레이어 Accept 성공" );
 				MainServer::GetInstance().DoRecv( m_users[ id ] );
 			}
 		}
@@ -62,13 +64,13 @@ void LobbyManager::ThreadFunc()
 					PACKET::SERVER_TO_CLIENT::AddPlayerPacket packet;
 					wmemcpy( packet.nickname, m_users[ t->id ]->nickname.c_str(), m_users[ t->id ]->nickname.size() );
 					BroadCastLobby( &packet );
-					PRINT_LOG( "유저 로그인 성공 : " + t->id );
+					PRINT_LOG( "유저 로그인 성공" );
 				}
 				else
 				{
 					PACKET::SERVER_TO_CLIENT::LoginFailPacket packet;
 					MainServer::GetInstance().SendPacket( m_users[ t->id ]->socket, &packet );
-					PRINT_LOG( "유저 로그인 실패 - 아이디 중복 : " + t->id );
+					PRINT_LOG( "유저 로그인 실패 - 아이디 중복" );
 				}
 				
 				delete task.second;

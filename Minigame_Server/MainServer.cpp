@@ -147,11 +147,18 @@ void MainServer::WorkerFunc()
 				packet_ptr += packet_size;
 				if ( 0 >= data_bytes )	break;
 				packet_size = packet_ptr[ 0 ];
+				if ( packet_size <= 0 || packet_size >= BUFFER_SIZE )
+				{
+					// 비정상 패킷 수신
+					ZeroMemory( overEx->packetBuffer, BUFFER_SIZE );
+				}
 			}
 
 			session->prevSize = data_bytes;
 			if ( data_bytes > 0 )
+			{
 				memcpy( overEx->packetBuffer, packet_ptr, data_bytes );
+			}
 
 			DoRecv( session );
 		}
@@ -197,9 +204,9 @@ void MainServer::SendPacket( SOCKET& target, void* p )
 
 void MainServer::DoRecv( Session* session )
 {
-	memset( &session->overlapped, 0, sizeof( session->overlapped ) );
 	session->overlapped.wsaBuf.buf = reinterpret_cast<char*>( session->overlapped.packetBuffer ) + session->prevSize;
 	session->overlapped.wsaBuf.len = BUFFER_SIZE - session->prevSize;
+	memset( &session->overlapped.overlapped, 0, sizeof( session->overlapped.overlapped ) );
 
 	DWORD r_flag = 0;
 	int ret = WSARecv( session->socket, &session->overlapped.wsaBuf, 1, NULL, &r_flag, &session->overlapped.overlapped, NULL );
@@ -248,7 +255,7 @@ void MainServer::ProcessPacket( int id, unsigned char* buffer )
 	break;
 	default:
 	{
-		PRINT_LOG( "알 수 없는 패킷 타입입니다 : " + buffer[ 1 ] );
+		PRINT_LOG( "알 수 없는 패킷 타입입니다" );
 	}
 		break;
 	}
