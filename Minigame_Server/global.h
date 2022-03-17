@@ -69,10 +69,13 @@ struct UserInfo
 {
 	int userNum;
 	wchar_t nickname[ 10 ] = {};
-	float x;
-	float y;
-	float z;
-	float angle;
+	bool isAlive = true;
+	float x = 0;
+	float y = 0;
+	float z = 0;
+	float angle = 0;
+	int score = 0;
+	int hp = 0;
 };
 
 struct GameRoom
@@ -82,6 +85,7 @@ struct GameRoom
 	std::unordered_map <int, UserInfo> userInfo;
 	int currentRound = 1;
 	int currentSeeker = -1;
+	int aliveHider = -1;
 };
 
 
@@ -242,6 +246,9 @@ namespace PACKETINFO
 		MOVEPLAYER,
 		ATTACK,
 		REMOVEPLAYERINGAME,
+		KILLPLAYER,
+		GAMEEND,
+		SETHP,
 	};
 
 	enum class CLIENT_TO_SERVER : unsigned char
@@ -338,6 +345,27 @@ namespace PACKET
 			unsigned char size = sizeof( RemovePlayerIngamePacket );
 			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::REMOVEPLAYERINGAME;
 			int index;
+		};
+
+		struct KillPlayerPacket
+		{
+			unsigned char size = sizeof( KillPlayerPacket );
+			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::KILLPLAYER;
+			int killer;
+			int victim;
+		};
+
+		struct GameEndPacket
+		{
+			unsigned char size = sizeof( GameEndPacket );
+			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::GAMEEND;
+		};
+
+		struct SetHpPacket
+		{
+			unsigned char size = sizeof( SetHpPacket );
+			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::SETHP;
+			int hp;
 		};
 	}
 

@@ -89,6 +89,11 @@ void GameManager::ThreadFunc()
 				// 다른 사유로 라운드가 종료되지 않았다면
 				if ( t->currentRound == t->room->currentRound )
 				{
+					for ( auto& pl : t->room->userInfo )
+					{
+						// 플레이어 정보 초기화
+						pl.second.isAlive = true;
+					}
 					PACKET::SERVER_TO_CLIENT::RoundStartPacket packet;
 
 					// 유저들에게 라운드 시작을 알림
@@ -249,5 +254,6 @@ int GameManager::PickSeeker( GameRoom* room )
 		temp = rand() % room->userSessions.size();
 	}
 	room->currentSeeker = temp;
+	room->aliveHider = room->userSessions.size() - SEEKER_COUNT;
 	return temp;
 }
