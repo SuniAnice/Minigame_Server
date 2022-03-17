@@ -93,6 +93,7 @@ void GameManager::ThreadFunc()
 					{
 						// 플레이어 정보 초기화
 						pl.second.isAlive = true;
+						pl.second.isFrozen = false;
 					}
 					PACKET::SERVER_TO_CLIENT::RoundStartPacket packet;
 
@@ -175,15 +176,20 @@ void GameManager::ThreadFunc()
 			INGAME::MovePlayerTask* t = reinterpret_cast<INGAME::MovePlayerTask*>( task.second );
 			if ( t != nullptr )
 			{
-				PACKET::SERVER_TO_CLIENT::MovePlayerPacket packet;
-				packet.index = t->index;
-				m_rooms[ t->session->roomIndex ]->userInfo[ t->index ].x = packet.x = t->x;
-				m_rooms[ t->session->roomIndex ]->userInfo[ t->index ].y = packet.y = t->y;
-				m_rooms[ t->session->roomIndex ]->userInfo[ t->index ].z = packet.z = t->z;
-				m_rooms[ t->session->roomIndex ]->userInfo[ t->index ].angle = packet.angle = t->angle;
+				auto user = m_rooms[ t->session->roomIndex ]->userInfo[ t->index ];
+				if ( CheckPlayer( user ) )
+				{
+					PACKET::SERVER_TO_CLIENT::MovePlayerPacket packet;
+					packet.index = t->index;
+					user.x = packet.x = t->x;
+					user.y = packet.y = t->y;
+					user.z = packet.z = t->z;
+					user.angle = packet.angle = t->angle;
 
-				// 움직인 플레이어를 제외하고 전송
-				BroadCastPacketExceptMe( m_rooms[ t->session->roomIndex ], &packet, t->index );
+					// 움직인 플레이어를 제외하고 전송
+					BroadCastPacketExceptMe( m_rooms[ t->session->roomIndex ], &packet, t->index );
+				}
+				
 
 				delete task.second;
 			}
@@ -194,11 +200,15 @@ void GameManager::ThreadFunc()
 			INGAME::AttackPlayerTask* t = reinterpret_cast<INGAME::AttackPlayerTask*>( task.second );
 			if ( t != nullptr )
 			{
-				PACKET::SERVER_TO_CLIENT::AttackPlayerPacket packet;
-				packet.index = t->index;
+				auto user = m_rooms[ t->session->roomIndex ]->userInfo[ t->index ];
+				if ( CheckPlayer( user ) )
+				{
+					PACKET::SERVER_TO_CLIENT::AttackPlayerPacket packet;
+					packet.index = t->index;
 
-				// 공격한 플레이어를 제외하고 전송
-				BroadCastPacketExceptMe( m_rooms[ t->session->roomIndex ], &packet, t->index );
+					// 공격한 플레이어를 제외하고 전송
+					BroadCastPacketExceptMe( m_rooms[ t->session->roomIndex ], &packet, t->index );
+				}
 
 				delete task.second;
 			}
@@ -217,6 +227,46 @@ void GameManager::ThreadFunc()
 				packet.index = t->index;
 
 				BroadCastPacket( m_rooms[ t->roomindex ], &packet );
+
+				delete task.second;
+			}
+		}
+		break;
+		case INGAME::TASK_TYPE::FREEZE:
+		{
+			INGAME::FreezeTask* t = reinterpret_cast<INGAME::FreezeTask*>( task.second );
+			if ( t != nullptr )
+			{
+				auto user = m_rooms[ t->session->roomIndex ]->userInfo[ t->index ];
+				if ( CheckPlayer( user ) )
+				{
+					user.isFrozen = true;
+
+					PACKET::SERVER_TO_CLIENT::FreezePacket packet;
+					packet.index = t->index;
+
+					BroadCastPacket( m_rooms[ t->session->roomIndex ], &packet );
+				}
+
+				delete task.second;
+			}
+		}
+		break;
+		case INGAME::TASK_TYPE::UNFREEZE:
+		{
+			INGAME::UnfreezeTask* t = reinterpret_cast<INGAME::UnfreezeTask*>( task.second );
+			if ( t != nullptr )
+			{
+				auto user = m_rooms[ t->session->roomIndex ]->userInfo[ t->index ];
+				if ( CheckPlayer( user ) )
+				{
+					m_rooms[ t->session->roomIndex ]->userInfo[ t->target ].isFrozen = false;
+
+					PACKET::SERVER_TO_CLIENT::UnfreezePacket packet;
+					packet.index = t->target;
+
+					BroadCastPacket( m_rooms[ t->session->roomIndex ], &packet );
+				}
 
 				delete task.second;
 			}
@@ -256,4 +306,10 @@ int GameManager::PickSeeker( GameRoom* room )
 	room->currentSeeker = temp;
 	room->aliveHider = room->userSessions.size() - SEEKER_COUNT;
 	return temp;
+}
+
+bool GameManager::CheckPlayer( UserInfo& info )
+{
+	if ( info.isAlive && !info.isFrozen )		return true;
+	else										return false;
 }

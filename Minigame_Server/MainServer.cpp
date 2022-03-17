@@ -253,6 +253,18 @@ void MainServer::ProcessPacket( int id, unsigned char* buffer )
 		GameManager::GetInstance().PushTask( INGAME::TASK_TYPE::ATTACK_PLAYER, new INGAME::AttackPlayerTask{ LobbyManager::GetInstance().GetSession( id ), id } );
 	}
 	break;
+	case PACKETINFO::CLIENT_TO_SERVER::FREEZE:
+	{
+		PACKET::CLIENT_TO_SERVER::FreezePacket* p = reinterpret_cast<PACKET::CLIENT_TO_SERVER::FreezePacket*>( buffer );
+		GameManager::GetInstance().PushTask( INGAME::TASK_TYPE::FREEZE, new INGAME::FreezeTask{ LobbyManager::GetInstance().GetSession( id ), id } );
+	}
+	break;
+	case PACKETINFO::CLIENT_TO_SERVER::UNFREEZE:
+	{
+		PACKET::CLIENT_TO_SERVER::UnfreezePacket* p = reinterpret_cast<PACKET::CLIENT_TO_SERVER::UnfreezePacket*>( buffer );
+		GameManager::GetInstance().PushTask( INGAME::TASK_TYPE::UNFREEZE, new INGAME::UnfreezeTask{ LobbyManager::GetInstance().GetSession( id ), id, p->target } );
+	}
+	break;
 	default:
 	{
 		PRINT_LOG( "알 수 없는 패킷 타입입니다" );

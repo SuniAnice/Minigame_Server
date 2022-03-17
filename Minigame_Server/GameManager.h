@@ -22,4 +22,6 @@ private:
 	void BroadCastPacketExceptMe( GameRoom* room, void* packet, int index );
 
 	int PickSeeker( GameRoom* room );
+
+	bool CheckPlayer( UserInfo& info );
 };

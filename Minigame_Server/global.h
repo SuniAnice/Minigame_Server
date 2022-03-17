@@ -70,6 +70,7 @@ struct UserInfo
 	int userNum;
 	wchar_t nickname[ 10 ] = {};
 	bool isAlive = true;
+	bool isFrozen = false;
 	float x = 0;
 	float y = 0;
 	float z = 0;
@@ -167,6 +168,8 @@ namespace INGAME
 		MOVE_PLAYER,
 		ATTACK_PLAYER,
 		REMOVE_PLAYER,
+		FREEZE,
+		UNFREEZE,
 	};
 
 	struct CreateRoomTask
@@ -218,6 +221,19 @@ namespace INGAME
 		int index;
 		Session* session;
 	};
+
+	struct FreezeTask
+	{
+		Session* session;
+		int index;
+	};
+
+	struct UnfreezeTask
+	{
+		Session* session;
+		int index;
+		int target;
+	};
 }
 
 struct TimerEvent
@@ -249,6 +265,9 @@ namespace PACKETINFO
 		KILLPLAYER,
 		GAMEEND,
 		SETHP,
+		FREEZE,
+		UNFREEZE,
+		SETPOSITION,
 	};
 
 	enum class CLIENT_TO_SERVER : unsigned char
@@ -259,6 +278,8 @@ namespace PACKETINFO
 		STOPMATCHING,
 		MOVEPLAYER,
 		ATTACK,
+		FREEZE,
+		UNFREEZE,
 	};
 }
 
@@ -367,6 +388,29 @@ namespace PACKET
 			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::SETHP;
 			int hp;
 		};
+
+		struct SetPositionPacket
+		{
+			unsigned char size = sizeof( SetPositionPacket );
+			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::SETPOSITION;
+			float x;
+			float y;
+			float z;
+		};
+
+		struct FreezePacket
+		{
+			unsigned char size = sizeof( FreezePacket );
+			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::FREEZE;
+			int index;
+		};
+
+		struct UnfreezePacket
+		{
+			unsigned char size = sizeof( UnfreezePacket );
+			PACKETINFO::SERVER_TO_CLIENT type = PACKETINFO::SERVER_TO_CLIENT::UNFREEZE;
+			int index;
+		};
 	}
 
 	namespace CLIENT_TO_SERVER
@@ -411,6 +455,19 @@ namespace PACKET
 		{
 			unsigned char size = sizeof( PlayerAttackPacket );
 			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::ATTACK;
+		};
+
+		struct FreezePacket
+		{
+			unsigned char size = sizeof( FreezePacket );
+			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::FREEZE;
+		};
+
+		struct UnfreezePacket
+		{
+			unsigned char size = sizeof( UnfreezePacket );
+			PACKETINFO::CLIENT_TO_SERVER type = PACKETINFO::CLIENT_TO_SERVER::UNFREEZE;
+			int target;
 		};
 	}
 }
