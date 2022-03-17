@@ -35,7 +35,7 @@ void GameManager::ThreadFunc()
 		case INGAME::TASK_TYPE::ROOM_CREATE:
 		{
 			INGAME::CreateRoomTask* t = reinterpret_cast< INGAME::CreateRoomTask* >( task.second );
-			if ( t != nullptr )
+			if ( t->room != nullptr )
 			{
 				unsigned int roomNum = GetNewRoomNum();
 				m_rooms[ roomNum ] = ( t->room );
@@ -63,7 +63,7 @@ void GameManager::ThreadFunc()
 		case INGAME::TASK_TYPE::ROUND_WAIT:
 		{
 			INGAME::RoundWaitTask* t = reinterpret_cast<INGAME::RoundWaitTask*>( task.second );
-			if ( t != nullptr )
+			if ( t->room != nullptr )
 			{
 				PACKET::SERVER_TO_CLIENT::RoundReadyPacket packet;
 				int picked = PickSeeker( t->room );
@@ -87,7 +87,7 @@ void GameManager::ThreadFunc()
 		case INGAME::TASK_TYPE::ROUND_READY:
 		{
 			INGAME::RoundReadyTask* t = reinterpret_cast<INGAME::RoundReadyTask*>( task.second );
-			if ( t != nullptr )
+			if ( t->room != nullptr )
 			{
 				// 다른 사유로 라운드가 종료되지 않았다면
 				if ( t->currentRound == t->room->currentRound )
@@ -113,7 +113,7 @@ void GameManager::ThreadFunc()
 		case INGAME::TASK_TYPE::ROUND_END:
 		{
 			INGAME::RoundEndTask* t = reinterpret_cast<INGAME::RoundEndTask*>( task.second );
-			if ( t != nullptr )
+			if ( t->room != nullptr )
 			{
 				// 다른 사유로 라운드가 종료되지 않았다면
 				if ( t->currentRound == t->room->currentRound )
@@ -145,13 +145,13 @@ void GameManager::ThreadFunc()
 					{
 						t->room->currentRound++;
 
+						PACKET::SERVER_TO_CLIENT::GameEndPacket packet;
+
 						// 로비에 플레이어 등록
 						for ( auto& pl : t->room->userSessions )
 						{
 							LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_ENTERLOBBY, new LOBBY::EnterLobbyTask{ pl } );
 						}
-
-						PACKET::SERVER_TO_CLIENT::GameEndPacket packet;
 
 						BroadCastPacket( t->room, &packet );
 
@@ -168,7 +168,7 @@ void GameManager::ThreadFunc()
 		case INGAME::TASK_TYPE::ROOM_REMOVE:
 		{
 			INGAME::RemoveRoomTask* t = reinterpret_cast<INGAME::RemoveRoomTask*>( task.second );
-			if ( t != nullptr )
+			if ( t->room != nullptr )
 			{
 				m_rooms.erase( t->room->roomNum );
 				delete ( t->room );
@@ -181,7 +181,7 @@ void GameManager::ThreadFunc()
 		case INGAME::TASK_TYPE::MOVE_PLAYER:
 		{
 			INGAME::MovePlayerTask* t = reinterpret_cast<INGAME::MovePlayerTask*>( task.second );
-			if ( t != nullptr )
+			if ( t->session != nullptr )
 			{
 				if ( t->session->roomIndex != -1 )
 				{
@@ -207,7 +207,7 @@ void GameManager::ThreadFunc()
 		case INGAME::TASK_TYPE::ATTACK_PLAYER:
 		{
 			INGAME::AttackPlayerTask* t = reinterpret_cast<INGAME::AttackPlayerTask*>( task.second );
-			if ( t != nullptr )
+			if ( t->session != nullptr )
 			{
 				if ( t->session->roomIndex != -1 )
 				{
@@ -266,7 +266,7 @@ void GameManager::ThreadFunc()
 		case INGAME::TASK_TYPE::REMOVE_PLAYER:
 		{
 			INGAME::RemovePlayerTask* t = reinterpret_cast<INGAME::RemovePlayerTask*>( task.second );
-			if ( t != nullptr )
+			if ( t->session != nullptr )
 			{
 				if ( t->session->roomIndex != -1 )
 				{
@@ -329,6 +329,7 @@ void GameManager::ThreadFunc()
 
 void GameManager::BroadCastPacket( GameRoom* room, void* packet )
 {
+	if ( room == nullptr ) return;
 	for ( auto& pl : room->userSessions )
 	{
 		MainServer::GetInstance().SendPacket( pl->socket, packet );
@@ -337,6 +338,7 @@ void GameManager::BroadCastPacket( GameRoom* room, void* packet )
 
 void GameManager::BroadCastPacketExceptMe( GameRoom* room, void* packet, int index )
 {
+	if ( room == nullptr ) return;
 	for ( auto& pl : room->userSessions )
 	{
 		if ( pl->key == index ) continue;
@@ -346,6 +348,7 @@ void GameManager::BroadCastPacketExceptMe( GameRoom* room, void* packet, int ind
 
 int GameManager::PickSeeker( GameRoom* room )
 {
+	if ( room == nullptr ) return -1;
 	if ( room->userSessions.size() == 0 ) return -1;
 	if ( room->userSessions.size() == 1 ) return 0;
 	int temp = rand() % room->userSessions.size();

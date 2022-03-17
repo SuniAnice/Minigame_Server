@@ -25,7 +25,7 @@ void MatchMaker::ThreadFunc()
 		case MATCH::TASK_TYPE::USER_STARTMATCHING:
 		{
 			MATCH::StartMatchingTask* t = reinterpret_cast<MATCH::StartMatchingTask*>( task.second );
-			if ( t != nullptr )
+			if ( t->session != nullptr )
 			{
 				m_matchingUser.emplace_back( t->session );
 				t->session->isMatching = true;
@@ -41,10 +41,10 @@ void MatchMaker::ThreadFunc()
 							room->userInfo[ m_matchingUser.front()->key ].userNum = m_matchingUser.front()->key;
 							wmemcpy( room->userInfo[ m_matchingUser.front()->key ].nickname,
 								m_matchingUser.front()->nickname.c_str(), m_matchingUser.front()->nickname.size() );
+							m_matchingUser.front()->isMatching = false;
 						}
 						m_matchingUser.pop_front();
 					}
-					t->session->isMatching = false;
 					GameManager::GetInstance().PushTask( INGAME::TASK_TYPE::ROOM_CREATE, new INGAME::CreateRoomTask{ room } );
 				}
 				PRINT_LOG( t->session->key + "번 플레이어 매칭 시작" );
@@ -55,7 +55,7 @@ void MatchMaker::ThreadFunc()
 		case MATCH::TASK_TYPE::USER_STOPMATCHING:
 		{
 			MATCH::StopMatchingTask* t = reinterpret_cast< MATCH::StopMatchingTask* >( task.second );
-			if ( t != nullptr )
+			if ( t->session != nullptr )
 			{
 				t->session->isMatching = false;
 				m_matchingUser.remove( t->session );
@@ -67,7 +67,7 @@ void MatchMaker::ThreadFunc()
 		case MATCH::TASK_TYPE::USER_REMOVE:
 		{
 			MATCH::RemovePlayerTask* t = reinterpret_cast<MATCH::RemovePlayerTask*>( task.second );
-			if ( t != nullptr )
+			if ( t->session != nullptr )
 			{
 				if ( std::find( m_matchingUser.begin(), m_matchingUser.end(), t->session ) != m_matchingUser.end() )
 				{

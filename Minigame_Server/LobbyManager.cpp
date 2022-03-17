@@ -52,6 +52,10 @@ void LobbyManager::ThreadFunc()
 					MainServer::GetInstance().SendPacket( m_users[ t->id ]->socket, &okPacket );
 					for ( auto& pl : m_users )
 					{
+						if ( pl.second == nullptr )
+						{
+							continue;
+						}
 						// 접속 중인 플레이어들의 정보 전송
 						if ( pl.second->nickname.size() != 0 && pl.second->nickname != t->nickname && pl.second->roomIndex == -1 )
 						{
@@ -109,7 +113,10 @@ void LobbyManager::ThreadFunc()
 						// 매칭을 돌리지 않았으면 바로 제거 가능
 						if ( !m_users[ *id ]->isMatching )
 						{
-							delete ( m_users[ *id ] );
+							auto t = m_users[ *id ];
+							m_users.erase( *id );
+							delete t;
+							break;
 						}
 						else
 						{
@@ -131,7 +138,7 @@ void LobbyManager::ThreadFunc()
 		case LOBBY::TASK_TYPE::USER_ENTERLOBBY:
 		{
 			LOBBY::EnterLobbyTask* t = reinterpret_cast<LOBBY::EnterLobbyTask*>( task.second );
-			if ( t != nullptr )
+			if ( t->session != nullptr )
 			{
 				t->session->roomIndex = -1;
 				for ( auto& pl : m_users )
@@ -154,7 +161,7 @@ void LobbyManager::ThreadFunc()
 		case LOBBY::TASK_TYPE::USER_EXITLOBBY:
 		{
 			LOBBY::ExitLobbyTask* t = reinterpret_cast<LOBBY::ExitLobbyTask*>( task.second );
-			if ( t != nullptr )
+			if ( t->session != nullptr )
 			{
 				t->session->roomIndex = t->roomNum;
 
@@ -197,11 +204,16 @@ int LobbyManager::GetNewId( const SOCKET& socket )
 
 void LobbyManager::BroadCastLobby( void* packet )
 {
-	for ( auto& player : m_users )
+	for ( auto it = m_users.begin(); it != m_users.end(); it++ )
 	{
-		if ( player.second->nickname.size() && player.second->roomIndex == -1 )
+		if ( it->second == nullptr )
 		{
-			MainServer::GetInstance().SendPacket( player.second->socket, packet );
+			it = m_users.erase( it );
+			continue;
+		}
+		if ( it->second->nickname.size() && it->second->roomIndex == -1 )
+		{
+			MainServer::GetInstance().SendPacket( it->second->socket, packet );
 		}
 	}
 }

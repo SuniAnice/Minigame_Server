@@ -182,7 +182,10 @@ void MainServer::WorkerFunc()
 			break;
 		default:
 		{
-			PRINT_LOG( "잘못된 Operation Type입니다 : " + static_cast<int>( overEx->opType ));
+			PRINT_LOG( "잘못된 Operation Type입니다");
+			// 로그아웃 처리
+			LobbyManager::GetInstance().PushTask( LOBBY::TASK_TYPE::USER_LOGOUT, &key );
+			continue;
 		}
 			break;
 		}
