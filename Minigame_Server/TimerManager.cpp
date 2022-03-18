@@ -11,7 +11,7 @@ TimerManager::~TimerManager()
 {
 }
 
-void TimerManager::PushTask( std::chrono::system_clock::time_point time,
+void TimerManager::PushTask( std::chrono::steady_clock::time_point time,
 	INGAME::ETaskType type, void* task )
 {
 	m_timerQueue.push( TimerEvent{ time, std::make_pair( type, task ) } );
@@ -30,7 +30,7 @@ void TimerManager::ThreadFunc()
 		}
 		
 		// 시간이 되지 않았으면 다시 넣음
-		if ( ev.m_time > std::chrono::system_clock::now() )
+		if ( ev.m_time > std::chrono::steady_clock::now() )
 		{
 			m_timerQueue.push( ev );
 			std::this_thread::sleep_for( 10ms );

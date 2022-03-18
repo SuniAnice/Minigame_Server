@@ -82,6 +82,7 @@ struct GameRoom
 	int m_currentRound = 1;
 	int m_currentSeeker = -1;
 	int m_aliveHider = -1;
+	std::chrono::steady_clock::time_point m_roundStert;
 };
 
 
@@ -218,7 +219,7 @@ namespace INGAME
 
 struct TimerEvent
 {
-	std::chrono::system_clock::time_point m_time;
+	std::chrono::steady_clock::time_point m_time;
 	std::pair < INGAME::ETaskType, void* > m_task;
 
 	bool operator< ( const TimerEvent& e ) const
@@ -255,6 +256,7 @@ namespace PacketInfo
 		StopMatching,
 		MovePlayer,
 		Attack,
+		MoveToLobby,
 	};
 }
 
@@ -411,6 +413,11 @@ namespace Packet
 			PacketInfo::EClientToServer m_type = PacketInfo::EClientToServer::Attack;
 		};
 
+		struct MoveToLobbyPacket
+		{
+			unsigned char m_size = sizeof( MoveToLobbyPacket );
+			PacketInfo::EClientToServer m_type = PacketInfo::EClientToServer::MoveToLobby;
+		};
 	}
 }
 #pragma pack(pop)

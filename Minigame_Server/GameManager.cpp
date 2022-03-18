@@ -57,7 +57,7 @@ void GameManager::ThreadFunc()
 					LobbyManager::GetInstance().PushTask( Lobby::ETaskType::ExitLobby, new Lobby::ExitLobbyTask{ pl, roomNum } );
 				}
 
-				TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + WAIT_TIME, INGAME::ETaskType::RoundWait,
+				TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + WAIT_TIME, INGAME::ETaskType::RoundWait,
 					new INGAME::RoundWaitTask{ t->m_room } );
 				PRINT_LOG("방 생성 요청 받음");
 			}
@@ -82,7 +82,7 @@ void GameManager::ThreadFunc()
 
 				// 유저들에게 라운드 준비를 알림
 				_BroadCastPacket( t->m_room, &packet );
-				TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + READY_TIME, INGAME::ETaskType::RoundReady,
+				TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + READY_TIME, INGAME::ETaskType::RoundReady,
 					new INGAME::RoundReadyTask{ t->m_room, t->m_room->m_currentRound } );
 				PRINT_LOG( "게임 상태 - 라운드 준비 상태로 전환" );
 			}
@@ -102,12 +102,13 @@ void GameManager::ThreadFunc()
 						// 플레이어 정보 초기화
 						pl.second.m_isAlive = true;
 					}
+					t->m_room->m_roundStert = std::chrono::steady_clock::now();
 					Packet::ServerToClient::RoundStartPacket packet;
 
 					// 유저들에게 라운드 시작을 알림
 					_BroadCastPacket( t->m_room, &packet );
 
-					TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + GAME_TIME, INGAME::ETaskType::RoundEnd,
+					TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + GAME_TIME, INGAME::ETaskType::RoundEnd,
 						new INGAME::RoundEndTask{ t->m_room, t->m_room->m_currentRound } );
 					PRINT_LOG( "게임 상태 - 라운드 진행 상태로 전환" );
 				}
@@ -143,7 +144,7 @@ void GameManager::ThreadFunc()
 						// 유저들에게 라운드 준비를 알림
 						_BroadCastPacket( t->m_room, &packet );
 
-						TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + READY_TIME, INGAME::ETaskType::RoundReady,
+						TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + READY_TIME, INGAME::ETaskType::RoundReady,
 							new INGAME::RoundReadyTask{ t->m_room, t->m_room->m_currentRound } );
 						PRINT_LOG( "게임 상태 - 다음 라운드 시작됨" );
 					}
@@ -153,16 +154,16 @@ void GameManager::ThreadFunc()
 
 						Packet::ServerToClient::GameEndPacket packet;
 
-						// 로비에 플레이어 등록
-						for ( auto& pl : t->m_room->m_userSessions )
-						{
-							LobbyManager::GetInstance().PushTask( Lobby::ETaskType::EnterLobby, new Lobby::EnterLobbyTask{ pl } );
-						}
+						//// 로비에 플레이어 등록
+						//for ( auto& pl : t->m_room->m_userSessions )
+						//{
+						//	LobbyManager::GetInstance().PushTask( Lobby::ETaskType::EnterLobby, new Lobby::EnterLobbyTask{ pl } );
+						//}
 
 						_BroadCastPacket( t->m_room, &packet );
 
 						// 게임 종료 처리 및 방 제거 태스크 등록
-						TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + GAME_TIME, INGAME::ETaskType::RoomRemove,
+						TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + GAME_TIME, INGAME::ETaskType::RoomRemove,
 							new INGAME::RemoveRoomTask{ t->m_room } );
 						PRINT_LOG( "게임 상태 - 종료" );
 					}
@@ -258,7 +259,7 @@ void GameManager::ThreadFunc()
 									if ( m_rooms[ t->m_session->m_roomIndex ]->m_aliveHider == 0 )
 									{
 										// 새로운 라운드 시작
-										TimerManager::GetInstance().PushTask( std::chrono::system_clock::now() + INTERVAL_TIME, INGAME::ETaskType::RoundEnd,
+										TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + INTERVAL_TIME, INGAME::ETaskType::RoundEnd,
 											new INGAME::RoundEndTask{ m_rooms[ t->m_session->m_roomIndex ], m_rooms[ t->m_session->m_roomIndex ]->m_currentRound } );
 									}
 								}

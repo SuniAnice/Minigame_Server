@@ -200,7 +200,7 @@ void MainServer::SendPacket( SOCKET& target, void* p )
 	m_overlapped->m_opType = EOpType::Send;
 	memset( &m_overlapped->m_overlapped, 0, sizeof( m_overlapped->m_overlapped ) );
 	memcpy( &m_overlapped->m_packetBuffer, p, p_size );
-	m_overlapped->m_wsaBuf.buf = reinterpret_cast<char*>( m_overlapped->m_packetBuffer );
+	m_overlapped->m_wsaBuf.buf = reinterpret_cast< char* >( m_overlapped->m_packetBuffer );
 	m_overlapped->m_wsaBuf.len = p_size;
 
 	int ret = WSASend( target, &( m_overlapped->m_wsaBuf ),
@@ -273,10 +273,18 @@ void MainServer::_ProcessPacket( int id, unsigned char* buffer )
 			new INGAME::AttackPlayerTask{ LobbyManager::GetInstance().GetSession( id ), id } );
 	}
 	break;
+	case PacketInfo::EClientToServer::MoveToLobby:
+	{
+		Packet::ClientToServer::MoveToLobbyPacket* p =
+			reinterpret_cast<Packet::ClientToServer::MoveToLobbyPacket*>( buffer );
+		LobbyManager::GetInstance().PushTask( Lobby::ETaskType::EnterLobby,
+			new Lobby::EnterLobbyTask{ LobbyManager::GetInstance().GetSession( id ) } );
+	}
+	break;
 	default:
 	{
 		PRINT_LOG( "알 수 없는 패킷 타입입니다" );
 	}
-		break;
+	break;
 	}
 }
