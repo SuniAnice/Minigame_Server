@@ -97,11 +97,6 @@ void GameManager::ThreadFunc()
 				// 다른 사유로 라운드가 종료되지 않았다면
 				if ( t->m_currentRound == t->m_room->m_currentRound )
 				{
-					for ( auto& pl : t->m_room->m_userInfo )
-					{
-						// 플레이어 정보 초기화
-						pl.second.m_isAlive = true;
-					}
 					t->m_room->m_roundStert = std::chrono::steady_clock::now();
 					Packet::ServerToClient::RoundStartPacket packet;
 
@@ -132,6 +127,11 @@ void GameManager::ThreadFunc()
 						Packet::ServerToClient::RoundReadyPacket packet;
 
 						int picked = _PickSeeker( t->m_room );
+						for ( auto& pl : t->m_room->m_userInfo )
+						{
+							// 플레이어 정보 초기화
+							pl.second.m_isAlive = true;
+						}
 
 						if ( picked == -1 )
 						{
@@ -154,11 +154,11 @@ void GameManager::ThreadFunc()
 
 						Packet::ServerToClient::GameEndPacket packet;
 
-						//// 로비에 플레이어 등록
-						//for ( auto& pl : t->m_room->m_userSessions )
-						//{
-						//	LobbyManager::GetInstance().PushTask( Lobby::ETaskType::EnterLobby, new Lobby::EnterLobbyTask{ pl } );
-						//}
+						// 로비에 플레이어 등록
+						for ( auto& pl : t->m_room->m_userSessions )
+						{
+							LobbyManager::GetInstance().PushTask( Lobby::ETaskType::EnterLobby, new Lobby::EnterLobbyTask{ pl } );
+						}
 
 						_BroadCastPacket( t->m_room, &packet );
 
@@ -331,7 +331,7 @@ int GameManager::_PickSeeker( GameRoom* room )
 
 bool GameManager::_CheckPlayer( UserInfo& info )
 {
-	if ( info.m_isAlive )							return true;
+	if ( info.m_isAlive )						return true;
 	else										return false;
 }
 

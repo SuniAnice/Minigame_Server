@@ -142,16 +142,6 @@ void LobbyManager::ThreadFunc()
 			{
 				Base::AutoCall defer( [&t]() { delete t; } );
 				t->m_session->m_roomIndex = -1;
-				for ( auto& pl : m_users )
-				{
-					// 접속 중인 플레이어들의 정보 전송
-					if ( pl.second->m_nickname.size() != 0 && pl.second->m_nickname != t->m_session->m_nickname )
-					{
-						Packet::ServerToClient::AddPlayerPacket plpacket;
-						wmemcpy( plpacket.m_nickname, m_users[ pl.first ]->m_nickname.c_str(), m_users[ pl.first ]->m_nickname.size() );
-						MainServer::GetInstance().SendPacket( t->m_session->m_socket, &plpacket );
-					}
-				}
 				Packet::ServerToClient::AddPlayerPacket packet;
 				wmemcpy( packet.m_nickname, t->m_session->m_nickname.c_str(), t->m_session->m_nickname.size() );
 				_BroadCastLobby( &packet );
@@ -170,6 +160,25 @@ void LobbyManager::ThreadFunc()
 				wmemcpy( packet.m_nickname, t->m_session->m_nickname.c_str(), t->m_session->m_nickname.size() );
 
 				_BroadCastLobby( &packet );
+			}
+		}
+		break;
+		case Lobby::ETaskType::OfferLobbyInfo:
+		{
+			Lobby::OfferLobbyInfoTask* t = reinterpret_cast<Lobby::OfferLobbyInfoTask*>( task.second );
+			if ( t->m_session != nullptr )
+			{
+				Base::AutoCall defer( [&t]() { delete t; } );
+				for ( auto& pl : m_users )
+				{
+					// 접속 중인 플레이어들의 정보 전송
+					if ( pl.second->m_nickname.size() != 0 && pl.second->m_nickname != t->m_session->m_nickname )
+					{
+						Packet::ServerToClient::AddPlayerPacket plpacket;
+						wmemcpy( plpacket.m_nickname, m_users[ pl.first ]->m_nickname.c_str(), m_users[ pl.first ]->m_nickname.size() );
+						MainServer::GetInstance().SendPacket( t->m_session->m_socket, &plpacket );
+					}
+				}
 			}
 		}
 		break;

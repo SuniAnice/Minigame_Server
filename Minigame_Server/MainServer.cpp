@@ -277,8 +277,8 @@ void MainServer::_ProcessPacket( int id, unsigned char* buffer )
 	{
 		Packet::ClientToServer::MoveToLobbyPacket* p =
 			reinterpret_cast<Packet::ClientToServer::MoveToLobbyPacket*>( buffer );
-		LobbyManager::GetInstance().PushTask( Lobby::ETaskType::EnterLobby,
-			new Lobby::EnterLobbyTask{ LobbyManager::GetInstance().GetSession( id ) } );
+		LobbyManager::GetInstance().PushTask( Lobby::ETaskType::OfferLobbyInfo,
+			new Lobby::OfferLobbyInfoTask{ LobbyManager::GetInstance().GetSession( id ) } );
 	}
 	break;
 	default:

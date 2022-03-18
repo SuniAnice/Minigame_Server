@@ -101,6 +101,7 @@ namespace Lobby
 
 		EnterLobby,
 		ExitLobby,
+		OfferLobbyInfo
 	};
 
 	struct LoginTask
@@ -124,6 +125,11 @@ namespace Lobby
 	{
 		Session* m_session;
 		size_t m_roomNum;
+	};
+
+	struct OfferLobbyInfoTask
+	{
+		Session* m_session;
 	};
 }
 
