@@ -9,9 +9,7 @@
 #include <cmath>
 
 
-GameManager::GameManager()
-{
-}
+GameManager::GameManager() {}
 
 GameManager::~GameManager()
 {

@@ -4,6 +4,7 @@
 
 
 #include "BaseManager.h"
+#include <sqlext.h>
 
 
 class DBManager : public Base::TSingleton < DBManager >,
@@ -14,5 +15,8 @@ public:
 	virtual ~DBManager();
 
 	virtual void ThreadFunc();
+
+private:
+	void _HandleDiagnosticRecord( SQLHANDLE hHandle, SQLSMALLINT hType, RETCODE RetCode );
 };
 
