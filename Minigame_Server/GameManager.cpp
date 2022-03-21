@@ -97,14 +97,15 @@ void GameManager::ThreadFunc()
 				// 다른 사유로 라운드가 종료되지 않았다면
 				if ( t->m_currentRound == t->m_room->m_currentRound )
 				{
-					t->m_room->m_roundStert = std::chrono::steady_clock::now();
+					if ( t->m_room->m_gameEnded ) break;
+					t->m_room->m_roundStart = std::chrono::steady_clock::now();
 					Packet::ServerToClient::RoundStartPacket packet;
 
 					// 유저들에게 라운드 시작을 알림
 					_BroadCastPacket( t->m_room, &packet );
 
-					TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + GAME_TIME, INGAME::ETaskType::RoundEnd,
-						new INGAME::RoundEndTask{ t->m_room, t->m_room->m_currentRound } );
+					TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + GAME_TIME, INGAME::ETaskType::Result,
+						new INGAME::ResultTask{ t->m_room, t->m_room->m_currentRound, false } );
 					PRINT_LOG( "게임 상태 - 라운드 진행 상태로 전환" );
 				}
 			}
@@ -132,6 +133,7 @@ void GameManager::ThreadFunc()
 							// 플레이어 정보 초기화
 							pl.second.m_isAlive = true;
 						}
+						t->m_room->m_gameEnded = false;
 
 						if ( picked == -1 )
 						{
@@ -219,6 +221,7 @@ void GameManager::ThreadFunc()
 				Base::AutoCall defer( [&t]() { delete t; } );
 				if ( t->m_session->m_roomIndex != -1 )
 				{
+					if ( m_rooms[ t->m_session->m_roomIndex ]->m_gameEnded ) break;
 					auto& user = m_rooms[ t->m_session->m_roomIndex ]->m_userInfo[ t->m_index ];
 					if ( _CheckPlayer( user ) )
 					{
@@ -259,8 +262,8 @@ void GameManager::ThreadFunc()
 									if ( m_rooms[ t->m_session->m_roomIndex ]->m_aliveHider == 0 )
 									{
 										// 새로운 라운드 시작
-										TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + INTERVAL_TIME, INGAME::ETaskType::RoundEnd,
-											new INGAME::RoundEndTask{ m_rooms[ t->m_session->m_roomIndex ], m_rooms[ t->m_session->m_roomIndex ]->m_currentRound } );
+										TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + GAME_TIME, INGAME::ETaskType::Result,
+											new INGAME::ResultTask{ m_rooms[ t->m_session->m_roomIndex ], m_rooms[ t->m_session->m_roomIndex ]->m_currentRound, true } );
 									}
 								}
 							}
@@ -286,6 +289,27 @@ void GameManager::ThreadFunc()
 					packet.m_index = t->m_index;
 
 					_BroadCastPacket( m_rooms[ t->m_roomindex ], &packet );
+				}
+			}
+		}
+		break;
+		case INGAME::ETaskType::Result:
+		{
+			INGAME::ResultTask* t = reinterpret_cast<INGAME::ResultTask*>( task.second );
+			if ( t->m_room != nullptr )
+			{
+				Base::AutoCall defer( [&t]() { delete t; } );
+				// 다른 사유로 라운드가 종료되지 않았다면
+				if ( t->m_currentRound == t->m_room->m_currentRound )
+				{
+					t->m_room->m_gameEnded = true;
+					Packet::ServerToClient::GameResultPacket packet;
+					packet.m_isSeekerWin = t->m_isSeekerWin;
+
+					_BroadCastPacket( t->m_room, &packet );
+
+					TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + INTERVAL_TIME, INGAME::ETaskType::RoundEnd,
+						new INGAME::RoundEndTask{ t->m_room, t->m_room->m_currentRound } );
 				}
 			}
 		}

@@ -82,7 +82,8 @@ struct GameRoom
 	int m_currentRound = 1;
 	int m_currentSeeker = -1;
 	int m_aliveHider = -1;
-	std::chrono::steady_clock::time_point m_roundStert;
+	std::chrono::steady_clock::time_point m_roundStart;
+	bool m_gameEnded = false;
 };
 
 
@@ -170,6 +171,7 @@ namespace INGAME
 		MovePlayer,
 		AttackPlayer,
 		RemovePlayer,
+		Result,
 	};
 
 	struct CreateRoomTask
@@ -221,6 +223,13 @@ namespace INGAME
 		int m_index;
 		Session* m_session;
 	};
+
+	struct ResultTask
+	{
+		GameRoom* m_room;
+		int m_currentRound;
+		bool m_isSeekerWin;
+	};
 }
 
 struct TimerEvent
@@ -252,6 +261,7 @@ namespace PacketInfo
 		KillPlayer,
 		GameEnd,
 		SetPosition,
+		GameResult,
 	};
 
 	enum class EClientToServer : unsigned char
@@ -372,6 +382,13 @@ namespace Packet
 			float m_x;
 			float m_y;
 			float m_z;
+		};
+
+		struct GameResultPacket
+		{
+			unsigned char m_size = sizeof( GameResultPacket );
+			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::GameResult;
+			bool m_isSeekerWin;
 		};
 	}
 
