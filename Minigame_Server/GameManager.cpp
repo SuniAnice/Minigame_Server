@@ -110,8 +110,8 @@ void GameManager::ThreadFunc()
 					// 유저들에게 라운드 시작을 알림
 					_BroadCastPacket( t->m_room, &packet );
 
-					TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + GAME_TIME, INGAME::ETaskType::Result,
-						new INGAME::ResultTask{ t->m_room, t->m_room->m_currentRound, false } );
+					TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + GAME_TIME, INGAME::ETaskType::RoundResult,
+						new INGAME::RoundResultTask{ t->m_room, t->m_room->m_currentRound, false } );
 					PRINT_LOG( "게임 상태 - 라운드 진행 상태로 전환" );
 				}
 			}
@@ -173,7 +173,8 @@ void GameManager::ThreadFunc()
 						// 로비에 플레이어 등록
 						for ( auto& pl : t->m_room->m_userSessions )
 						{
-							LobbyManager::GetInstance().PushTask( Lobby::ETaskType::EnterLobby, new Lobby::EnterLobbyTask{ pl } );
+							LobbyManager::GetInstance().PushTask( Lobby::ETaskType::EnterLobby, 
+								new Lobby::EnterLobbyTask{ pl, t->m_room->m_userInfo[ pl->m_key ].m_score } );
 						}
 
 						_BroadCastPacket( t->m_room, &packet );
@@ -269,15 +270,20 @@ void GameManager::ThreadFunc()
 									p.m_victim = pl.second.m_userNum;
 									pl.second.m_isAlive = false;
 									m_rooms[ t->m_session->m_roomIndex ]->m_aliveHider -= 1;
+									auto time = duration_cast< seconds >
+										( steady_clock::now() - m_rooms[ t->m_session->m_roomIndex ]->m_roundStart );
+									pl.second.m_score += time.count() * 2;
 
 									_BroadCastPacket( m_rooms[ t->m_session->m_roomIndex ], &p );
 									PRINT_LOG( "공격 성공 패킷 전송됨" );
 
+									user.m_score += 200;
+
 									if ( m_rooms[ t->m_session->m_roomIndex ]->m_aliveHider == 0 )
 									{
 										// 새로운 라운드 시작
-										TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + GAME_TIME, INGAME::ETaskType::Result,
-											new INGAME::ResultTask{ m_rooms[ t->m_session->m_roomIndex ], m_rooms[ t->m_session->m_roomIndex ]->m_currentRound, true } );
+										PushTask( INGAME::ETaskType::RoundResult, new INGAME::RoundResultTask{ m_rooms[ t->m_session->m_roomIndex ],
+											m_rooms[ t->m_session->m_roomIndex ]->m_currentRound, true } );
 									}
 								}
 							}
@@ -307,9 +313,9 @@ void GameManager::ThreadFunc()
 			}
 		}
 		break;
-		case INGAME::ETaskType::Result:
+		case INGAME::ETaskType::RoundResult:
 		{
-			INGAME::ResultTask* t = reinterpret_cast<INGAME::ResultTask*>( task.second );
+			INGAME::RoundResultTask* t = reinterpret_cast<INGAME::RoundResultTask*>( task.second );
 			if ( t->m_room != nullptr )
 			{
 				Base::AutoCall defer( [&t]() { delete t; } );
@@ -319,6 +325,24 @@ void GameManager::ThreadFunc()
 					t->m_room->m_gameEnded = true;
 					Packet::ServerToClient::GameResultPacket packet;
 					packet.m_isSeekerWin = t->m_isSeekerWin;
+
+					if ( t->m_isSeekerWin )
+					{
+						// 술래에게 추가 점수 지급
+						auto time = GAME_TIME - duration_cast<seconds>( steady_clock::now() - t->m_room->m_roundStart );
+						t->m_room->m_userInfo[ t->m_room->m_currentSeeker ].m_score += 100 + time.count() * 3;
+					}
+					else
+					{
+						// 생존한 사물에게 추가 점수 지급
+						for ( auto& pl : t->m_room->m_userInfo )
+						{
+							if ( pl.first == t->m_room->m_currentSeeker )	continue;
+							if ( !pl.second.m_isAlive )						continue;
+							auto time = duration_cast< seconds >( steady_clock::now() - t->m_room->m_roundStart );
+							pl.second.m_score += 350 + time.count() * 2;
+						}
+					}
 
 					_BroadCastPacket( t->m_room, &packet );
 

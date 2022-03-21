@@ -142,6 +142,7 @@ void LobbyManager::ThreadFunc()
 			{
 				Base::AutoCall defer( [&t]() { delete t; } );
 				t->m_session->m_roomIndex = -1;
+				t->m_session->m_totalScore += t->m_score;
 				Packet::ServerToClient::AddPlayerPacket packet;
 				wmemcpy( packet.m_nickname, t->m_session->m_nickname.c_str(), t->m_session->m_nickname.size() );
 				_BroadCastLobby( &packet );

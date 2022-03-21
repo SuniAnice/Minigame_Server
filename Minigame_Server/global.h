@@ -122,6 +122,7 @@ namespace Lobby
 	struct EnterLobbyTask
 	{
 		Session* m_session;
+		int m_score;
 	};
 
 	struct ExitLobbyTask
@@ -180,7 +181,7 @@ namespace INGAME
 		MovePlayer,
 		AttackPlayer,
 		RemovePlayer,
-		Result,
+		RoundResult,
 	};
 
 	struct CreateRoomTask
@@ -233,7 +234,7 @@ namespace INGAME
 		Session* m_session;
 	};
 
-	struct ResultTask
+	struct RoundResultTask
 	{
 		GameRoom* m_room;
 		int m_currentRound;
