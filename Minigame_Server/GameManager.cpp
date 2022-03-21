@@ -335,6 +335,7 @@ void GameManager::ThreadFunc()
 						// 술래에게 추가 점수 지급
 						auto time = GAME_TIME - duration_cast< seconds >( steady_clock::now() - t->m_room->m_roundStart );
 						t->m_room->m_userInfo[ t->m_room->m_currentSeeker ].m_score += SCORE_SEEKERWIN + time.count() * SCORE_SEEKERTIME;
+						PRINT_LOG( "라운드 결과 - 술래 승리" );
 					}
 					else
 					{
@@ -349,6 +350,7 @@ void GameManager::ThreadFunc()
 							}
 							auto time = duration_cast< seconds >( steady_clock::now() - t->m_room->m_roundStart );
 							pl.second.m_score += SCORE_HIDERWIN + SCORE_HIDERSURVIVE + time.count() * SCORE_HIDERTIME;
+							PRINT_LOG( "라운드 결과 - 사물 승리" );
 						}
 					}
 
@@ -381,6 +383,7 @@ void GameManager::ThreadFunc()
 
 						TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + EVENT_2_INTERVAL, INGAME::ETaskType::ProcessEvent,
 							new INGAME::ProcessEventTask{ t->m_room, t->m_room->m_currentRound, 2 } );
+						PRINT_LOG( "이벤트 발생 - 1번째" );
 					}
 						break;
 					case 2:
@@ -401,6 +404,7 @@ void GameManager::ThreadFunc()
 
 						TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + EVENT_3_INTERVAL, INGAME::ETaskType::ProcessEvent,
 							new INGAME::ProcessEventTask{ t->m_room, t->m_room->m_currentRound, 3 } );
+						PRINT_LOG( "이벤트 발생 - 2번째" );
 					}
 					break;
 					case 3:
@@ -410,6 +414,7 @@ void GameManager::ThreadFunc()
 						packet.m_eventIndex = eventNum;
 
 						_BroadCastPacket( t->m_room, &packet );
+						PRINT_LOG( "이벤트 발생 - 3번째" );
 					}
 					break;
 					}
