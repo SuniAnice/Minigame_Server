@@ -144,6 +144,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="DBManager.cpp" />
+    <ClCompile Include="DetourAlloc.cpp" />
+    <ClCompile Include="DetourAssert.cpp" />
+    <ClCompile Include="DetourCommon.cpp" />
+    <ClCompile Include="DetourNavMesh.cpp" />
+    <ClCompile Include="DetourNavMeshBuilder.cpp" />
+    <ClCompile Include="DetourNavMeshQuery.cpp" />
+    <ClCompile Include="DetourNode.cpp" />
     <ClCompile Include="GameManager.cpp" />
     <ClCompile Include="LogUtil.cpp" />
     <ClCompile Include="main.cpp" />
@@ -156,6 +163,15 @@
     <ClInclude Include="AutoCall.hpp" />
     <ClInclude Include="BaseManager.h" />
     <ClInclude Include="DBManager.h" />
+    <ClInclude Include="DetourAlloc.h" />
+    <ClInclude Include="DetourAssert.h" />
+    <ClInclude Include="DetourCommon.h" />
+    <ClInclude Include="DetourMath.h" />
+    <ClInclude Include="DetourNavMesh.h" />
+    <ClInclude Include="DetourNavMeshBuilder.h" />
+    <ClInclude Include="DetourNavMeshQuery.h" />
+    <ClInclude Include="DetourNode.h" />
+    <ClInclude Include="DetourStatus.h" />
     <ClInclude Include="GameManager.h" />
     <ClInclude Include="LogUtil.h" />
     <ClInclude Include="MainServer.h" />

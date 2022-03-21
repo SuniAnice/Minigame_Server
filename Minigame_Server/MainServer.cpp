@@ -8,6 +8,8 @@
 #include "LobbyManager.h"
 #include "LogUtil.h"
 #include <iostream>
+#include "DetourNavMesh.h"
+#include <fstream>
 
 
 MainServer::MainServer() : m_listenSocket(), m_hIOCP( nullptr )
@@ -78,6 +80,20 @@ void MainServer::_Init()
 	MatchMaker::GetInstance();
 	GameManager::GetInstance();
 	TimerManager::GetInstance();
+
+
+	std::ifstream in( "Navdata.bin", std::ifstream::binary );
+	in.seekg( 0, in.end );
+	int length = (int)in.tellg();
+	in.seekg( 0, in.beg );
+	// malloc으로 메모리 할당 
+	unsigned char* buffer = new unsigned char[ length ];
+	// read data as a block: 
+	in.read( (char*)buffer, length );
+	in.close();
+
+	dtNavMesh dt;
+	dt.init( buffer, length, 0 );
 }
 
 void MainServer::Run()

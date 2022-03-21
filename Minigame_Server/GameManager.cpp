@@ -368,6 +368,7 @@ void GameManager::ThreadFunc()
 			if ( t->m_room != nullptr )
 			{
 				Base::AutoCall defer( [&t]() { delete t; } );
+				if ( t->m_room->m_gameEnded ) break;
 				// 다른 사유로 라운드가 종료되지 않았다면
 				if ( t->m_currentRound == t->m_room->m_currentRound )
 				{
