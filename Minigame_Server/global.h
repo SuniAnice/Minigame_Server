@@ -58,6 +58,7 @@ struct Session {
 	std::wstring m_nickname;
 	int m_roomIndex = -1;
 	bool m_isMatching = false;
+	int m_totalScore = 0;
 };
 
 // 인게임 유저 정보
@@ -229,6 +230,27 @@ namespace INGAME
 		GameRoom* m_room;
 		int m_currentRound;
 		bool m_isSeekerWin;
+	};
+}
+
+namespace DB
+{
+	enum class ETaskType
+	{
+		LoadInfo,
+		SaveInfo,
+	};
+
+	struct LoadTask
+	{
+		Session* m_Session;
+		int m_score;
+	};
+
+	struct SaveTask
+	{
+		Session* m_Session;
+		int m_score;
 	};
 }
 
