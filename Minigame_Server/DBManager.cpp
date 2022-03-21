@@ -2,12 +2,33 @@
 
 #include "AutoCall.hpp"
 #include "DBManager.h"
+#include "LobbyManager.h"
 #include <sqlext.h>
 
 
 DBManager::DBManager() {}
 
 DBManager::~DBManager() {}
+
+void HandleDiagnosticRecord( SQLHANDLE hHandle, SQLSMALLINT hType, RETCODE RetCode )
+{
+	SQLSMALLINT iRec = 0;
+	SQLINTEGER iError;
+	WCHAR wszMessage[ 1000 ];
+	WCHAR wszState[ SQL_SQLSTATE_SIZE + 1 ];
+	if ( RetCode == SQL_INVALID_HANDLE ) {
+		fwprintf( stderr, L"Invalid handle!\n" );
+		return;
+	}
+	while ( SQLGetDiagRec( hType, hHandle, ++iRec, wszState, &iError, wszMessage,
+		(SQLSMALLINT)( sizeof( wszMessage ) / sizeof( WCHAR ) ), (SQLSMALLINT*)NULL ) == SQL_SUCCESS ) {
+		// Hide data truncated..
+		if ( wcsncmp( wszState, L"01004", 5 ) ) {
+			fwprintf( stderr, L"[%5.5s] %s (%d)\n", wszState, wszMessage, iError );
+		}
+	}
+}
+
 
 void DBManager::ThreadFunc()
 {
@@ -51,6 +72,52 @@ void DBManager::ThreadFunc()
 						if ( t->m_Session != nullptr )
 						{
 							Base::AutoCall defer( [&t]() { delete t; } );
+							SQLWCHAR buf[ 255 ];
+							wsprintf( buf, L"EXEC READ_PLAYERINFO %s", t->m_Session->m_nickname.c_str() );
+							retcode = SQLExecDirect( hstmt, (SQLWCHAR*)buf, SQL_NTS );
+							SQLLEN cbTotalScore = 0;
+							SQLINTEGER totalScore = 0;
+							if ( retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO ) {
+
+								retcode = SQLBindCol( hstmt, 2, SQL_C_ULONG, &totalScore, 10, &cbTotalScore );
+
+								retcode = SQLFetch( hstmt );
+								Lobby::DBInfoLoadedTask newt;
+
+								for ( int i = 0; ; i++ ) {
+									retcode = SQLFetch( hstmt );
+									if ( retcode == SQL_ERROR || retcode == SQL_SUCCESS_WITH_INFO ) {
+										HandleDiagnosticRecord( hstmt, SQL_HANDLE_STMT, retcode );
+									}
+									if ( retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO )
+									{
+										// 태스크에 읽어온 변수 할당하기
+										newt.m_session = t->m_Session;
+										newt.m_score = totalScore;
+									}
+									else
+									{
+										if ( i != 0 )
+											break; // end of data
+										else
+										{
+											// db에 정보 없음, 가입 처리
+											newt.m_session = t->m_Session;
+											newt.m_score = 0;
+											break;
+										}
+									}
+								}
+
+								SQLCancel( hstmt );
+								SQLFreeHandle( SQL_HANDLE_STMT, hstmt );
+
+								if ( newt.m_session != nullptr )
+								{
+									LobbyManager::GetInstance().PushTask( Lobby::ETaskType::DBInfoLoaded, &newt );
+								}
+							}
+
 						}
 					}
 					break;
@@ -60,6 +127,18 @@ void DBManager::ThreadFunc()
 						if ( t->m_Session != nullptr )
 						{
 							Base::AutoCall defer( [&t]() { delete t; } );
+
+							retcode = SQLAllocHandle( SQL_HANDLE_STMT, hdbc, &hstmt );
+							SQLWCHAR buf[ 255 ];
+							wsprintf( buf, L"EXEC SAVE_PLAYERINFO %s, %d", t->m_Session->m_nickname.c_str(), t->m_score );
+							retcode = SQLExecDirect( hstmt, (SQLWCHAR*)buf, SQL_NTS );
+							HandleDiagnosticRecord( hstmt, SQL_HANDLE_STMT, retcode );
+							// Process data  
+							if ( retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO ) {
+								SQLCancel( hstmt );
+								SQLFreeHandle( SQL_HANDLE_STMT, hstmt );
+							}
+
 						}
 					}
 					break;

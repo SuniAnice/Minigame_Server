@@ -103,7 +103,8 @@ namespace Lobby
 
 		EnterLobby,
 		ExitLobby,
-		OfferLobbyInfo
+		OfferLobbyInfo,
+		DBInfoLoaded,
 	};
 
 	struct LoginTask
@@ -133,6 +134,13 @@ namespace Lobby
 	{
 		Session* m_session;
 	};
+
+	struct DBInfoLoadedTask
+	{
+		Session* m_session;
+		int m_score;
+	};
+
 }
 
 namespace Match
