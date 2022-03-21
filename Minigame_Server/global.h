@@ -25,7 +25,7 @@ constexpr int		BUFFER_SIZE =			1024;
 constexpr int		MAX_PLAYER_IN_ROOM =	2;		// 최대 방 인원수
 constexpr int		SEEKER_COUNT =			1;		// 술래 인원수
 constexpr int		MAX_ROUND =				5;		// 최대 진행 라운드
-constexpr int		NUM_OF_OBJECTS =		10;		// 랜덤하게 설정될 오브젝트의 수
+constexpr int		NUM_OF_OBJECTS =		25;		// 랜덤하게 설정될 오브젝트의 수
 constexpr size_t	MAX_USER =				100000;	// 최대 동접자
 constexpr seconds	WAIT_TIME =				5s;		// 라운드 대기 시간
 constexpr seconds	READY_TIME =			30s;	// 라운드 준비 시간
@@ -71,7 +71,7 @@ struct UserInfo
 	float m_z = 0;
 	float m_angle = 0;
 	int m_score = 0;
-	int m_hp = 0;
+	int m_object = 0;
 };
 
 struct GameRoom
@@ -328,6 +328,8 @@ namespace Packet
 			unsigned char m_size = sizeof( RoundReadyPacket );
 			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::RoundReady;
 			int m_seeker = 0;
+			int m_hiderNum[ MAX_PLAYER_IN_ROOM - SEEKER_COUNT ];
+			int m_object[ MAX_PLAYER_IN_ROOM - SEEKER_COUNT ];
 		};
 
 		struct RoundStartPacket

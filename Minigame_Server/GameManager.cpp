@@ -79,6 +79,14 @@ void GameManager::ThreadFunc()
 					break;
 				}
 				packet.m_seeker = t->m_room->m_userSessions[ picked ]->m_key;
+				int count = 0;
+				for ( auto& pl : t->m_room->m_userInfo )
+				{
+					if ( pl.first == picked ) continue;
+					pl.second.m_object = rand() % NUM_OF_OBJECTS;
+					packet.m_hiderNum[ count ] = pl.first;
+					packet.m_object[ count ] = pl.second.m_object;
+				}
 
 				// 유저들에게 라운드 준비를 알림
 				_BroadCastPacket( t->m_room, &packet );
@@ -142,6 +150,14 @@ void GameManager::ThreadFunc()
 							break;
 						}
 						packet.m_seeker = t->m_room->m_userSessions[ picked ]->m_key;
+						int count = 0;
+						for ( auto& pl : t->m_room->m_userInfo )
+						{
+							if ( pl.first == picked ) continue;
+							pl.second.m_object = rand() % NUM_OF_OBJECTS;
+							packet.m_hiderNum[ count ] = pl.first;
+							packet.m_object[ count ] = pl.second.m_object;
+						}
 
 						// 유저들에게 라운드 준비를 알림
 						_BroadCastPacket( t->m_room, &packet );
