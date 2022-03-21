@@ -155,7 +155,7 @@ void GameManager::ThreadFunc()
 						for ( auto& pl : t->m_room->m_userInfo )
 						{
 							if ( pl.first == picked ) continue;
-							pl.second.m_object = rand() % NUM_OF_OBJECTS;
+							pl.second.m_object = rand() % NUM_OF_OBJECTS + 1;
 							packet.m_hiderNum[ count ] = pl.first;
 							packet.m_object[ count ] = pl.second.m_object;
 							count++;
@@ -394,7 +394,7 @@ void GameManager::ThreadFunc()
 						for ( auto& pl : t->m_room->m_userInfo )
 						{
 							if ( pl.first == t->m_room->m_currentSeeker ) continue;
-							pl.second.m_object = rand() % NUM_OF_OBJECTS;
+							pl.second.m_object = rand() % NUM_OF_OBJECTS + 1;
 							packet.m_hiderNum[ count ] = pl.first;
 							packet.m_object[ count ] = pl.second.m_object;
 							count++;
