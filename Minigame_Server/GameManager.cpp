@@ -263,7 +263,7 @@ void GameManager::ThreadFunc()
 								double y = sin( ( user.m_angle ) * 3.14 / 180 );
 								// 공격자의 방향 벡터와 각 물체까지의 방향벡터의 사잇각 계산
 								double angle = atan2( x * dy - dx * y, dx * x + dy * y ) * 180 / 3.14;
-								if ( angle <= ATTACK_ANGLE && angle >= -ATTACK_ANGLE )
+								if ( abs( angle ) <= ATTACK_ANGLE )
 								{
 									Packet::ServerToClient::KillPlayerPacket p;
 									p.m_killer = t->m_index;
@@ -272,12 +272,12 @@ void GameManager::ThreadFunc()
 									m_rooms[ t->m_session->m_roomIndex ]->m_aliveHider -= 1;
 									auto time = duration_cast< seconds >
 										( steady_clock::now() - m_rooms[ t->m_session->m_roomIndex ]->m_roundStart );
-									pl.second.m_score += time.count() * 2;
+									pl.second.m_score += time.count() * SCORE_HIDERTIME;
 
 									_BroadCastPacket( m_rooms[ t->m_session->m_roomIndex ], &p );
 									PRINT_LOG( "공격 성공 패킷 전송됨" );
 
-									user.m_score += 200;
+									user.m_score += SCORE_SEEKERKILL;
 
 									if ( m_rooms[ t->m_session->m_roomIndex ]->m_aliveHider == 0 )
 									{
@@ -330,7 +330,7 @@ void GameManager::ThreadFunc()
 					{
 						// 술래에게 추가 점수 지급
 						auto time = GAME_TIME - duration_cast<seconds>( steady_clock::now() - t->m_room->m_roundStart );
-						t->m_room->m_userInfo[ t->m_room->m_currentSeeker ].m_score += 100 + time.count() * 3;
+						t->m_room->m_userInfo[ t->m_room->m_currentSeeker ].m_score += SCORE_SEEKERWIN + time.count() * SCORE_SEEKERTIME;
 					}
 					else
 					{
@@ -338,9 +338,13 @@ void GameManager::ThreadFunc()
 						for ( auto& pl : t->m_room->m_userInfo )
 						{
 							if ( pl.first == t->m_room->m_currentSeeker )	continue;
-							if ( !pl.second.m_isAlive )						continue;
+							if ( !pl.second.m_isAlive )
+							{
+								pl.second.m_score += SCORE_HIDERWIN;
+								continue;
+							}
 							auto time = duration_cast< seconds >( steady_clock::now() - t->m_room->m_roundStart );
-							pl.second.m_score += 350 + time.count() * 2;
+							pl.second.m_score += SCORE_HIDERWIN + SCORE_HIDERSURVIVE + time.count() * SCORE_HIDERTIME;
 						}
 					}
 

@@ -33,6 +33,13 @@ constexpr seconds	GAME_TIME =				180s;	// 라운드 진행 시간
 constexpr seconds	INTERVAL_TIME =			5s;		// 라운드 종료 인터벌
 constexpr double	ATTACK_RANGE =			300;	// 공격 사정거리
 constexpr double	ATTACK_ANGLE =			45;		// 공격 각도
+constexpr int		SCORE_SEEKERWIN =		100;	// 술래팀 기본 승리 보상
+constexpr int		SCORE_SEEKERKILL =		200;	// 술래의 찾은 유저 보상
+constexpr int		SCORE_SEEKERTIME =		3;		// 술래의 승리시 남은 시간 보상
+constexpr int		SCORE_HIDERWIN =		50;		// 숨는팀 기본 승리 보상
+constexpr int		SCORE_HIDERSURVIVE =	300;	// 숨는팀 최후 생존 보상
+constexpr int		SCORE_HIDERTIME =		2;		// 숨는팀 생존 시간 보상
+
 
 
 enum class EOpType
