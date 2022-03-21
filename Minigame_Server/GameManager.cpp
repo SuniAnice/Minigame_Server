@@ -57,13 +57,13 @@ void GameManager::ThreadFunc()
 
 				TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + WAIT_TIME, INGAME::ETaskType::RoundWait,
 					new INGAME::RoundWaitTask{ t->m_room } );
-				PRINT_LOG("방 생성 요청 받음");
+				PRINT_LOG( "방 생성 요청 받음" );
 			}
 		}
-			break;
+		break;
 		case INGAME::ETaskType::RoundWait:
 		{
-			INGAME::RoundWaitTask* t = reinterpret_cast<INGAME::RoundWaitTask*>( task.second );
+			INGAME::RoundWaitTask* t = reinterpret_cast< INGAME::RoundWaitTask* >( task.second );
 			if ( t->m_room != nullptr )
 			{
 				Base::AutoCall defer( [&t]() { delete t; } );
@@ -96,7 +96,7 @@ void GameManager::ThreadFunc()
 		break;
 		case INGAME::ETaskType::RoundReady:
 		{
-			INGAME::RoundReadyTask* t = reinterpret_cast<INGAME::RoundReadyTask*>( task.second );
+			INGAME::RoundReadyTask* t = reinterpret_cast< INGAME::RoundReadyTask* >( task.second );
 			if ( t->m_room != nullptr )
 			{
 				Base::AutoCall defer( [&t]() { delete t; } );
@@ -110,6 +110,9 @@ void GameManager::ThreadFunc()
 					// 유저들에게 라운드 시작을 알림
 					_BroadCastPacket( t->m_room, &packet );
 
+					TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + EVENT_1_INTERVAL, INGAME::ETaskType::ProcessEvent,
+						new INGAME::ProcessEventTask{ t->m_room, t->m_room->m_currentRound, 1 } );
+
 					TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + GAME_TIME, INGAME::ETaskType::RoundResult,
 						new INGAME::RoundResultTask{ t->m_room, t->m_room->m_currentRound, false } );
 					PRINT_LOG( "게임 상태 - 라운드 진행 상태로 전환" );
@@ -119,7 +122,7 @@ void GameManager::ThreadFunc()
 		break;
 		case INGAME::ETaskType::RoundEnd:
 		{
-			INGAME::RoundEndTask* t = reinterpret_cast<INGAME::RoundEndTask*>( task.second );
+			INGAME::RoundEndTask* t = reinterpret_cast< INGAME::RoundEndTask* >( task.second );
 			if ( t->m_room != nullptr )
 			{
 				Base::AutoCall defer( [&t]() { delete t; } );
@@ -155,6 +158,7 @@ void GameManager::ThreadFunc()
 							pl.second.m_object = rand() % NUM_OF_OBJECTS;
 							packet.m_hiderNum[ count ] = pl.first;
 							packet.m_object[ count ] = pl.second.m_object;
+							count++;
 						}
 
 						// 유저들에게 라운드 준비를 알림
@@ -173,7 +177,7 @@ void GameManager::ThreadFunc()
 						// 로비에 플레이어 등록
 						for ( auto& pl : t->m_room->m_userSessions )
 						{
-							LobbyManager::GetInstance().PushTask( Lobby::ETaskType::EnterLobby, 
+							LobbyManager::GetInstance().PushTask( Lobby::ETaskType::EnterLobby,
 								new Lobby::EnterLobbyTask{ pl, t->m_room->m_userInfo[ pl->m_key ].m_score } );
 						}
 
@@ -184,14 +188,14 @@ void GameManager::ThreadFunc()
 							new INGAME::RemoveRoomTask{ t->m_room } );
 						PRINT_LOG( "게임 상태 - 종료" );
 					}
-					
+
 				}
 			}
 		}
 		break;
 		case INGAME::ETaskType::RoomRemove:
 		{
-			INGAME::RemoveRoomTask* t = reinterpret_cast<INGAME::RemoveRoomTask*>( task.second );
+			INGAME::RemoveRoomTask* t = reinterpret_cast< INGAME::RemoveRoomTask* >( task.second );
 			if ( t->m_room != nullptr )
 			{
 				Base::AutoCall defer( [&t]() { delete t; } );
@@ -230,7 +234,7 @@ void GameManager::ThreadFunc()
 		break;
 		case INGAME::ETaskType::AttackPlayer:
 		{
-			INGAME::AttackPlayerTask* t = reinterpret_cast<INGAME::AttackPlayerTask*>( task.second );
+			INGAME::AttackPlayerTask* t = reinterpret_cast< INGAME::AttackPlayerTask* >( task.second );
 			if ( t->m_session != nullptr )
 			{
 				Base::AutoCall defer( [&t]() { delete t; } );
@@ -295,7 +299,7 @@ void GameManager::ThreadFunc()
 		break;
 		case INGAME::ETaskType::RemovePlayer:
 		{
-			INGAME::RemovePlayerTask* t = reinterpret_cast<INGAME::RemovePlayerTask*>( task.second );
+			INGAME::RemovePlayerTask* t = reinterpret_cast< INGAME::RemovePlayerTask* >( task.second );
 			if ( t->m_session != nullptr )
 			{
 				Base::AutoCall defer( [&t]() { delete t; } );
@@ -315,7 +319,7 @@ void GameManager::ThreadFunc()
 		break;
 		case INGAME::ETaskType::RoundResult:
 		{
-			INGAME::RoundResultTask* t = reinterpret_cast<INGAME::RoundResultTask*>( task.second );
+			INGAME::RoundResultTask* t = reinterpret_cast< INGAME::RoundResultTask* >( task.second );
 			if ( t->m_room != nullptr )
 			{
 				Base::AutoCall defer( [&t]() { delete t; } );
@@ -329,7 +333,7 @@ void GameManager::ThreadFunc()
 					if ( t->m_isSeekerWin )
 					{
 						// 술래에게 추가 점수 지급
-						auto time = GAME_TIME - duration_cast<seconds>( steady_clock::now() - t->m_room->m_roundStart );
+						auto time = GAME_TIME - duration_cast< seconds >( steady_clock::now() - t->m_room->m_roundStart );
 						t->m_room->m_userInfo[ t->m_room->m_currentSeeker ].m_score += SCORE_SEEKERWIN + time.count() * SCORE_SEEKERTIME;
 					}
 					else
@@ -352,6 +356,63 @@ void GameManager::ThreadFunc()
 
 					TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + INTERVAL_TIME, INGAME::ETaskType::RoundEnd,
 						new INGAME::RoundEndTask{ t->m_room, t->m_room->m_currentRound } );
+				}
+			}
+		}
+		break;
+		case INGAME::ETaskType::ProcessEvent:
+		{
+			INGAME::ProcessEventTask* t = reinterpret_cast< INGAME::ProcessEventTask* >( task.second );
+			if ( t->m_room != nullptr )
+			{
+				Base::AutoCall defer( [&t]() { delete t; } );
+				// 다른 사유로 라운드가 종료되지 않았다면
+				if ( t->m_currentRound == t->m_room->m_currentRound )
+				{
+					switch ( t->m_eventcount )
+					{
+					case 1:
+					{
+						int eventNum = rand() % EVENT_COUNT;
+						Packet::ServerToClient::RandomEventPacket packet;
+						packet.m_eventIndex = eventNum;
+
+						_BroadCastPacket( t->m_room, &packet );
+
+						TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + EVENT_2_INTERVAL, INGAME::ETaskType::ProcessEvent,
+							new INGAME::ProcessEventTask{ t->m_room, t->m_room->m_currentRound, 2 } );
+					}
+						break;
+					case 2:
+					{
+						Packet::ServerToClient::ChangeObjectPacket packet;
+						int count = 0;
+
+						for ( auto& pl : t->m_room->m_userInfo )
+						{
+							if ( pl.first == t->m_room->m_currentSeeker ) continue;
+							pl.second.m_object = rand() % NUM_OF_OBJECTS;
+							packet.m_hiderNum[ count ] = pl.first;
+							packet.m_object[ count ] = pl.second.m_object;
+							count++;
+						}
+
+						_BroadCastPacket( t->m_room, &packet );
+
+						TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + EVENT_3_INTERVAL, INGAME::ETaskType::ProcessEvent,
+							new INGAME::ProcessEventTask{ t->m_room, t->m_room->m_currentRound, 3 } );
+					}
+					break;
+					case 3:
+					{
+						int eventNum = rand() % EVENT_COUNT;
+						Packet::ServerToClient::RandomEventPacket packet;
+						packet.m_eventIndex = eventNum;
+
+						_BroadCastPacket( t->m_room, &packet );
+					}
+					break;
+					}
 				}
 			}
 		}

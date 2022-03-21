@@ -39,7 +39,10 @@ constexpr int		SCORE_SEEKERTIME =		3;		// 술래의 승리시 남은 시간 보상
 constexpr int		SCORE_HIDERWIN =		50;		// 숨는팀 기본 승리 보상
 constexpr int		SCORE_HIDERSURVIVE =	300;	// 숨는팀 최후 생존 보상
 constexpr int		SCORE_HIDERTIME =		2;		// 숨는팀 생존 시간 보상
-
+constexpr int		EVENT_COUNT =			3;		// 랜덤하게 발생할 수 있는 이벤트의 갯수
+constexpr seconds	EVENT_1_INTERVAL =		30s;	// 라운드 시작 후 첫번째 이벤트 사이의 시간
+constexpr seconds	EVENT_2_INTERVAL =		60s;	// 첫번째 이벤트와 두번째 이벤트의 간격
+constexpr seconds	EVENT_3_INTERVAL =		40s;	// 두번째 이벤트와 세번째 이벤트의 간격
 
 
 enum class EOpType
@@ -189,6 +192,7 @@ namespace INGAME
 		AttackPlayer,
 		RemovePlayer,
 		RoundResult,
+		ProcessEvent,
 	};
 
 	struct CreateRoomTask
@@ -247,6 +251,13 @@ namespace INGAME
 		int m_currentRound;
 		bool m_isSeekerWin;
 	};
+
+	struct ProcessEventTask
+	{
+		GameRoom* m_room;
+		int m_currentRound;
+		int m_eventcount = 0;
+	};
 }
 
 namespace DB
@@ -300,6 +311,8 @@ namespace PacketInfo
 		GameEnd,
 		SetPosition,
 		GameResult,
+		RandomEvent,
+		ChangeObject,
 	};
 
 	enum class EClientToServer : unsigned char
@@ -429,6 +442,21 @@ namespace Packet
 			unsigned char m_size = sizeof( GameResultPacket );
 			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::GameResult;
 			bool m_isSeekerWin;
+		};
+
+		struct RandomEventPacket
+		{
+			unsigned char m_size = sizeof( RandomEventPacket );
+			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::RandomEvent;
+			int m_eventIndex = 0;
+		};
+
+		struct ChangeObjectPacket
+		{
+			unsigned char m_size = sizeof( ChangeObjectPacket );
+			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::ChangeObject;
+			int m_hiderNum[ MAX_PLAYER_IN_ROOM - SEEKER_COUNT ];
+			int m_object[ MAX_PLAYER_IN_ROOM - SEEKER_COUNT ];
 		};
 	}
 
