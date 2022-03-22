@@ -367,8 +367,8 @@ void GameManager::ThreadFunc()
 							}
 							auto time = duration_cast< seconds >( steady_clock::now() - t->m_room->m_roundStart );
 							pl.second.m_score += SCORE_HIDERWIN + SCORE_HIDERSURVIVE + time.count() * SCORE_HIDERTIME;
-							PRINT_LOG( "라운드 결과 - 사물 승리" );
 						}
+						PRINT_LOG( "라운드 결과 - 사물 승리" );
 					}
 
 					_BroadCastPacket( t->m_room, &packet );
