@@ -49,7 +49,7 @@ void MatchMaker::ThreadFunc()
 					}
 					GameManager::GetInstance().PushTask( INGAME::ETaskType::RoomCreate, new INGAME::CreateRoomTask{ room } );
 				}
-				PRINT_LOG( t->m_session->m_key + "번 플레이어 매칭 시작" );
+				PRINT_LOG( "플레이어 매칭 시작" );
 			}
 		}
 			break;
@@ -61,7 +61,7 @@ void MatchMaker::ThreadFunc()
 				Base::AutoCall defer( [&t]() { delete t; } );
 				t->m_session->m_isMatching = false;
 				m_matchingUser.remove( t->m_session );
-				PRINT_LOG( t->m_session->m_key + "번 플레이어 매칭 취소" );
+				PRINT_LOG( "플레이어 매칭 취소" );
 			}
 		}
 		break;

@@ -18,7 +18,7 @@ public:
 
 	void DoRecv( Session* session );
 
-	void SendPacket( SOCKET& target, void* p );
+	int SendPacket( Session* target, void* p );
 private:
 	void _Init();
 private:

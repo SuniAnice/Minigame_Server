@@ -124,7 +124,7 @@ void MainServer::_WorkerFunc()
 				continue;
 			}
 		}
-		if ( key != 0 && bytesReceived == 0 )
+		if ( key != 0 && bytesReceived <= 0 )
 		{
 			// 로그아웃 처리
 			LobbyManager::GetInstance().PushTask( Lobby::ETaskType::UserLogout, &key );
@@ -193,7 +193,7 @@ void MainServer::_WorkerFunc()
 	}
 }
 
-void MainServer::SendPacket( SOCKET& target, void* p )
+int MainServer::SendPacket( Session* target, void* p )
 {
 	int p_size = reinterpret_cast< unsigned char* >( p )[ 0 ];
 	OverlappedExtended* m_overlapped = new OverlappedExtended;
@@ -203,8 +203,14 @@ void MainServer::SendPacket( SOCKET& target, void* p )
 	m_overlapped->m_wsaBuf.buf = reinterpret_cast< char* >( m_overlapped->m_packetBuffer );
 	m_overlapped->m_wsaBuf.len = p_size;
 
-	int ret = WSASend( target, &( m_overlapped->m_wsaBuf ),
+	int ret = WSASend( target->m_socket, &( m_overlapped->m_wsaBuf ),
 		1, NULL, 0, &m_overlapped->m_overlapped, NULL );
+	if ( ret == -1 )
+	{
+		LobbyManager::GetInstance().PushTask( Lobby::ETaskType::UserLogout, &target->m_key );
+		PRINT_LOG( "send failed : invalid player" );
+	}
+	return ret;
 }
 
 void MainServer::DoRecv( Session* session )

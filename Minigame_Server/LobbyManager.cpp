@@ -5,6 +5,7 @@
 #include "LogUtil.h"
 #include "MainServer.h"
 #include "MatchMaker.h"
+#include "TimerManager.h"
 #include "GameManager.h"
 
 
@@ -51,7 +52,7 @@ void LobbyManager::ThreadFunc()
 					m_usernames.insert( t->m_nickname );
 					Packet::ServerToClient::LoginOkPacket okPacket;
 					okPacket.m_index = t->m_id;
-					MainServer::GetInstance().SendPacket( m_users[ t->m_id ]->m_socket, &okPacket );
+					MainServer::GetInstance().SendPacket( m_users[ t->m_id ], &okPacket );
 					for ( auto& pl : m_users )
 					{
 						if ( pl.second == nullptr )
@@ -63,19 +64,21 @@ void LobbyManager::ThreadFunc()
 						{
 							Packet::ServerToClient::AddPlayerPacket plpacket;
 							wmemcpy( plpacket.m_nickname, m_users[ pl.first ]->m_nickname.c_str(), m_users[ pl.first ]->m_nickname.size() );
-							MainServer::GetInstance().SendPacket( m_users[ t->m_id ]->m_socket, &plpacket );
+							MainServer::GetInstance().SendPacket( m_users[ t->m_id ], &plpacket );
 						}
 					}
 					m_users[ t->m_id ]->m_nickname = t->m_nickname;
 					Packet::ServerToClient::AddPlayerPacket packet;
 					wmemcpy( packet.m_nickname, m_users[ t->m_id ]->m_nickname.c_str(), m_users[ t->m_id ]->m_nickname.size() );
 					_BroadCastLobby( &packet );
+					TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + 10s, INGAME::ETaskType::CheckAlive,
+						new INGAME::CheckAliveTask{ m_users[ t->m_id ] } );
 					PRINT_LOG( "유저 로그인 성공" );
 				}
 				else
 				{
 					Packet::ServerToClient::LoginFailPacket packet;
-					MainServer::GetInstance().SendPacket( m_users[ t->m_id ]->m_socket, &packet );
+					MainServer::GetInstance().SendPacket( m_users[ t->m_id ], &packet );
 					PRINT_LOG( "유저 로그인 실패 - 아이디 중복" );
 				}
 			}
@@ -177,7 +180,7 @@ void LobbyManager::ThreadFunc()
 					{
 						Packet::ServerToClient::AddPlayerPacket plpacket;
 						wmemcpy( plpacket.m_nickname, m_users[ pl.first ]->m_nickname.c_str(), m_users[ pl.first ]->m_nickname.size() );
-						MainServer::GetInstance().SendPacket( t->m_session->m_socket, &plpacket );
+						MainServer::GetInstance().SendPacket( t->m_session, &plpacket );
 					}
 				}
 			}
@@ -223,7 +226,7 @@ void LobbyManager::_BroadCastLobby( void* packet )
 		}
 		if ( it->second->m_nickname.size() && it->second->m_roomIndex == -1 )
 		{
-			MainServer::GetInstance().SendPacket( it->second->m_socket, packet );
+			MainServer::GetInstance().SendPacket( it->second, packet );
 		}
 	}
 }

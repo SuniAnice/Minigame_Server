@@ -31,6 +31,22 @@ void GameManager::ThreadFunc()
 		}
 		switch ( task.first )
 		{
+		case INGAME::ETaskType::CheckAlive:
+		{
+			INGAME::CheckAliveTask* t = reinterpret_cast<INGAME::CheckAliveTask*>( task.second );
+			if ( t->m_session != nullptr )
+			{
+				Base::AutoCall defer( [&t]() { delete t; } );
+				Packet::ServerToClient::CheckAlivePacket packet;
+
+				if ( MainServer::GetInstance().SendPacket( t->m_session, &packet ) != -1 )
+				{
+					TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + 10s, INGAME::ETaskType::CheckAlive,
+						new INGAME::CheckAliveTask{ t->m_session } );
+				}
+			}
+		}
+		break;
 		case INGAME::ETaskType::RoomCreate:
 		{
 			INGAME::CreateRoomTask* t = reinterpret_cast< INGAME::CreateRoomTask* >( task.second );
@@ -432,7 +448,7 @@ void GameManager::_BroadCastPacket( GameRoom* room, void* packet )
 	if ( room == nullptr ) return;
 	for ( auto& pl : room->m_userSessions )
 	{
-		MainServer::GetInstance().SendPacket( pl->m_socket, packet );
+		MainServer::GetInstance().SendPacket( pl, packet );
 	}
 }
 
@@ -442,7 +458,7 @@ void GameManager::_BroadCastPacketExceptMe( GameRoom* room, void* packet, int in
 	for ( auto& pl : room->m_userSessions )
 	{
 		if ( pl->m_key == index ) continue;
-		MainServer::GetInstance().SendPacket( pl->m_socket, packet );
+		MainServer::GetInstance().SendPacket( pl, packet );
 	}
 }
 

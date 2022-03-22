@@ -28,7 +28,7 @@ constexpr int		MAX_ROUND =				5;		// 최대 진행 라운드
 constexpr int		NUM_OF_OBJECTS =		25;		// 랜덤하게 설정될 오브젝트의 수
 constexpr size_t	MAX_USER =				100000;	// 최대 동접자
 constexpr seconds	WAIT_TIME =				5s;		// 라운드 대기 시간
-constexpr seconds	READY_TIME =			30s;	// 라운드 준비 시간
+constexpr seconds	READY_TIME =			15s;	// 라운드 준비 시간
 constexpr seconds	GAME_TIME =				180s;	// 라운드 진행 시간
 constexpr seconds	INTERVAL_TIME =			5s;		// 라운드 종료 인터벌
 constexpr double	ATTACK_RANGE =			300;	// 공격 사정거리
@@ -193,6 +193,7 @@ namespace INGAME
 		RemovePlayer,
 		RoundResult,
 		ProcessEvent,
+		CheckAlive,
 	};
 
 	struct CreateRoomTask
@@ -258,6 +259,11 @@ namespace INGAME
 		int m_currentRound;
 		int m_eventcount = 0;
 	};
+
+	struct CheckAliveTask
+	{
+		Session* m_session;
+	};
 }
 
 namespace DB
@@ -313,6 +319,7 @@ namespace PacketInfo
 		GameResult,
 		RandomEvent,
 		ChangeObject,
+		CheckAlive,
 	};
 
 	enum class EClientToServer : unsigned char
@@ -457,6 +464,12 @@ namespace Packet
 			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::ChangeObject;
 			int m_hiderNum[ MAX_PLAYER_IN_ROOM - SEEKER_COUNT ];
 			int m_object[ MAX_PLAYER_IN_ROOM - SEEKER_COUNT ];
+		};
+
+		struct CheckAlivePacket
+		{
+			unsigned char m_size = sizeof( CheckAlivePacket );
+			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::CheckAlive;
 		};
 	}
 
