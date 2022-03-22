@@ -47,7 +47,7 @@ void LobbyManager::ThreadFunc()
 			if ( t != nullptr )
 			{
 				Base::AutoCall defer( [ &t ]() { delete t; } );
-				if ( !m_usernames.count( t->m_nickname ) )
+				if ( !m_usernames.count( t->m_nickname ) && m_usernames.size() < 10 )
 				{
 					m_usernames.insert( t->m_nickname );
 					Packet::ServerToClient::LoginOkPacket okPacket;
