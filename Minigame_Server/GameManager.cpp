@@ -77,10 +77,11 @@ void GameManager::ThreadFunc()
 					break;
 				}
 				packet.m_seeker = t->m_room->m_userSessions[ picked ]->m_key;
+				t->m_room->m_currentSeeker = packet.m_seeker;
 				int count = 0;
 				for ( auto& pl : t->m_room->m_userInfo )
 				{
-					if ( pl.first == picked ) continue;
+					if ( pl.first == packet.m_seeker ) continue;
 					pl.second.m_object = rand() % NUM_OF_OBJECTS + 1;
 					packet.m_hiderNum[ count ] = pl.first;
 					packet.m_object[ count ] = pl.second.m_object;
@@ -152,10 +153,11 @@ void GameManager::ThreadFunc()
 							break;
 						}
 						packet.m_seeker = t->m_room->m_userSessions[ picked ]->m_key;
+						t->m_room->m_currentSeeker = packet.m_seeker;
 						int count = 0;
 						for ( auto& pl : t->m_room->m_userInfo )
 						{
-							if ( pl.first == picked ) continue;
+							if ( pl.first == packet.m_seeker ) continue;
 							pl.second.m_object = rand() % NUM_OF_OBJECTS + 1;
 							packet.m_hiderNum[ count ] = pl.first;
 							packet.m_object[ count ] = pl.second.m_object;
