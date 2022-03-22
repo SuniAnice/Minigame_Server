@@ -81,9 +81,10 @@ void GameManager::ThreadFunc()
 				for ( auto& pl : t->m_room->m_userInfo )
 				{
 					if ( pl.first == picked ) continue;
-					pl.second.m_object = rand() % NUM_OF_OBJECTS;
+					pl.second.m_object = rand() % NUM_OF_OBJECTS + 1;
 					packet.m_hiderNum[ count ] = pl.first;
 					packet.m_object[ count ] = pl.second.m_object;
+					count++;
 				}
 
 				// 유저들에게 라운드 준비를 알림
