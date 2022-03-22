@@ -76,8 +76,7 @@ void GameManager::ThreadFunc()
 					PushTask( INGAME::ETaskType::RoomRemove, new INGAME::RemoveRoomTask{ t->m_room } );
 					break;
 				}
-				packet.m_seeker = t->m_room->m_userSessions[ picked ]->m_key;
-				t->m_room->m_currentSeeker = packet.m_seeker;
+				packet.m_seeker = t->m_room->m_currentSeeker;
 				int count = 0;
 				for ( auto& pl : t->m_room->m_userInfo )
 				{
@@ -152,8 +151,7 @@ void GameManager::ThreadFunc()
 							PushTask( INGAME::ETaskType::RoomRemove, new INGAME::RemoveRoomTask{ t->m_room } );
 							break;
 						}
-						packet.m_seeker = t->m_room->m_userSessions[ picked ]->m_key;
-						t->m_room->m_currentSeeker = packet.m_seeker;
+						packet.m_seeker = t->m_room->m_currentSeeker;
 						int count = 0;
 						for ( auto& pl : t->m_room->m_userInfo )
 						{
@@ -455,11 +453,11 @@ int GameManager::_PickSeeker( GameRoom* room )
 	if ( room->m_userSessions.size() == 1 )	return 0;
 	int temp = rand() % room->m_userSessions.size();
 	// 같은 사람은 술래가 되지 않도록
-	while ( temp == room->m_currentSeeker )
+	while ( room->m_userSessions[ temp ]->m_key == room->m_currentSeeker )
 	{
 		temp = rand() % room->m_userSessions.size();
 	}
-	room->m_currentSeeker = temp;
+	room->m_currentSeeker = room->m_userSessions[ temp ]->m_key;
 	room->m_aliveHider = room->m_userSessions.size() - SEEKER_COUNT;
 	return temp;
 }
