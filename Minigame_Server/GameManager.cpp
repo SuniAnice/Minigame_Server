@@ -330,6 +330,7 @@ void GameManager::ThreadFunc()
 					packet.m_index = t->m_index;
 
 					_BroadCastPacket( m_rooms[ t->m_roomindex ], &packet );
+					delete ( t->m_session );
 				}
 			}
 		}
