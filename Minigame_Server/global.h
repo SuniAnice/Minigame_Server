@@ -55,7 +55,7 @@ struct OverlappedExtended
 	WSAOVERLAPPED m_overlapped;
 	WSABUF m_wsaBuf;
 
-	unsigned char m_packetBuffer[ BUFFER_SIZE ];
+	unsigned char m_packetBuffer[ BUFFER_SIZE ] = {};
 	EOpType m_opType;
 	SOCKET m_socket;
 };
@@ -63,8 +63,8 @@ struct OverlappedExtended
 struct Session {
 	OverlappedExtended m_overlapped;
 	SOCKET m_socket;
-	int m_key;
-	int m_prevSize;
+	int m_key = 0;
+	int m_prevSize = 0;
 	std::wstring m_nickname;
 	int m_roomIndex = -1;
 	bool m_isMatching = false;
@@ -74,7 +74,7 @@ struct Session {
 // 인게임 유저 정보
 struct UserInfo
 {
-	int m_userNum;
+	int m_userNum = 0;
 	wchar_t m_nickname[ 10 ] = {};
 	bool m_isAlive = true;
 	float m_x = 0;
@@ -386,8 +386,8 @@ namespace Packet
 			unsigned char m_size = sizeof( RoundReadyPacket );
 			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::RoundReady;
 			int m_seeker = 0;
-			int m_hiderNum[ MAX_PLAYER_IN_ROOM - SEEKER_COUNT ];
-			int m_object[ MAX_PLAYER_IN_ROOM - SEEKER_COUNT ];
+			int m_hiderNum[ MAX_PLAYER_IN_ROOM - SEEKER_COUNT ] = {};
+			int m_object[ MAX_PLAYER_IN_ROOM - SEEKER_COUNT ] = {};
 		};
 
 		struct RoundStartPacket
@@ -400,33 +400,33 @@ namespace Packet
 		{
 			unsigned char m_size = sizeof( MovePlayerPacket );
 			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::MovePlayer;
-			int m_index;
-			float m_x;
-			float m_y;
-			float m_z;
-			float m_angle;
+			int m_index = 0;
+			float m_x = 0;
+			float m_y = 0;
+			float m_z = 0;
+			float m_angle = 0;
 		};
 
 		struct AttackPlayerPacket
 		{
 			unsigned char m_size = sizeof( AttackPlayerPacket );
 			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::Attack;
-			int m_index;
+			int m_index = 0;
 		};
 
 		struct RemovePlayerIngamePacket
 		{
 			unsigned char m_size = sizeof( RemovePlayerIngamePacket );
 			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::RemovePlayerInGame;
-			int m_index;
+			int m_index = 0;
 		};
 
 		struct KillPlayerPacket
 		{
 			unsigned char m_size = sizeof( KillPlayerPacket );
 			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::KillPlayer;
-			int m_killer;
-			int m_victim;
+			int m_killer = 0;
+			int m_victim = 0;
 		};
 
 		struct GameEndPacket
@@ -439,16 +439,16 @@ namespace Packet
 		{
 			unsigned char m_size = sizeof( SetPositionPacket );
 			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::SetPosition;
-			float m_x;
-			float m_y;
-			float m_z;
+			float m_x = 0;
+			float m_y = 0;
+			float m_z = 0;
 		};
 
 		struct GameResultPacket
 		{
 			unsigned char m_size = sizeof( GameResultPacket );
 			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::GameResult;
-			bool m_isSeekerWin;
+			bool m_isSeekerWin = false;
 		};
 
 		struct RandomEventPacket
@@ -462,8 +462,8 @@ namespace Packet
 		{
 			unsigned char m_size = sizeof( ChangeObjectPacket );
 			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::ChangeObject;
-			int m_hiderNum[ MAX_PLAYER_IN_ROOM - SEEKER_COUNT ];
-			int m_object[ MAX_PLAYER_IN_ROOM - SEEKER_COUNT ];
+			int m_hiderNum[ MAX_PLAYER_IN_ROOM - SEEKER_COUNT ] = {};
+			int m_object[ MAX_PLAYER_IN_ROOM - SEEKER_COUNT ] = {};
 		};
 
 		struct CheckAlivePacket
@@ -505,10 +505,10 @@ namespace Packet
 		{
 			unsigned char m_size = sizeof( PlayerMovePacket );
 			PacketInfo::EClientToServer m_type = PacketInfo::EClientToServer::MovePlayer;
-			float m_x;
-			float m_y;
-			float m_z;
-			float m_angle;
+			float m_x = 0;
+			float m_y = 0;
+			float m_z = 0;
+			float m_angle = 0;
 		};
 
 		struct PlayerAttackPacket
