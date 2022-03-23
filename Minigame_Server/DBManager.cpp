@@ -3,6 +3,7 @@
 #include "AutoCall.hpp"
 #include "DBManager.h"
 #include "LobbyManager.h"
+#include "LogUtil.h"
 
 
 DBManager::DBManager() {}
@@ -50,9 +51,10 @@ void DBManager::ThreadFunc()
 						DB::LoadTask* t = reinterpret_cast< DB::LoadTask* >( task.second );
 						if ( t->m_Session != nullptr )
 						{
+							retcode = SQLAllocHandle( SQL_HANDLE_STMT, hdbc, &hstmt );
 							Base::AutoCall defer( [&t]() { delete t; } );
 							SQLWCHAR buf[ 255 ];
-							wsprintf( buf, L"EXEC READ_PLAYERINFO %s", t->m_Session->m_nickname.c_str() );
+							wsprintf( buf, L"EXEC READ_PLAYERINFO %s", t->m_nickname.c_str() );
 							retcode = SQLExecDirect( hstmt, (SQLWCHAR*)buf, SQL_NTS );
 							SQLLEN cbTotalScore = 0;
 							SQLINTEGER totalScore = 0;
@@ -72,7 +74,7 @@ void DBManager::ThreadFunc()
 									{
 										// 태스크에 읽어온 변수 할당하기
 										newt.m_session = t->m_Session;
-										newt.m_nickname = t->m_nickname;
+										wmemcpy( newt.m_nickname, t->m_nickname.c_str(), t->m_nickname.size() );
 										newt.m_score = totalScore;
 									}
 									else
@@ -83,7 +85,7 @@ void DBManager::ThreadFunc()
 										{
 											// db에 정보 없음, 가입 처리
 											newt.m_session = t->m_Session;
-											newt.m_nickname = t->m_nickname;
+											wmemcpy( newt.m_nickname, t->m_nickname.c_str(), t->m_nickname.size() );
 											newt.m_score = 0;
 											break;
 										}
@@ -95,6 +97,7 @@ void DBManager::ThreadFunc()
 
 								if ( newt.m_session != nullptr )
 								{
+									PRINT_LOG( "유저 정보 DB로부터 읽어옴" );
 									LobbyManager::GetInstance().PushTask( Lobby::ETaskType::DBInfoLoaded, &newt );
 								}
 							}
@@ -121,7 +124,7 @@ void DBManager::ThreadFunc()
 								SQLCancel( hstmt );
 								SQLFreeHandle( SQL_HANDLE_STMT, hstmt );
 							}
-
+							PRINT_LOG( "유저 정보 DB에 저장" );
 						}
 					}
 					break;
