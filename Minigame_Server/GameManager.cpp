@@ -191,6 +191,14 @@ void GameManager::ThreadFunc()
 
 						Packet::ServerToClient::GameEndPacket packet;
 
+						int count = 0;
+						for ( auto& pl : t->m_room->m_userInfo )
+						{
+							packet.m_userNum[ count ] = pl.first;
+							packet.m_userScore[ count ] = pl.second.m_score;
+							count++;
+						}
+
 						// 로비에 플레이어 등록
 						for ( auto& pl : t->m_room->m_userSessions )
 						{
@@ -371,12 +379,14 @@ void GameManager::ThreadFunc()
 						}
 						PRINT_LOG( "라운드 결과 - 사물 승리" );
 					}
-					int count = 0;
+					int maxscore = -1;
 					for ( auto& pl : t->m_room->m_userInfo )
 					{
-						packet.m_userNum[ count ] = pl.first;
-						packet.m_userScore[ count ] = pl.second.m_score;
-						count++;
+						if ( maxscore < pl.second.m_score )
+						{
+							maxscore = pl.second.m_score;
+							packet.m_firstUser = pl.first;
+						}
 					}
 
 					_BroadCastPacket( t->m_room, &packet );
