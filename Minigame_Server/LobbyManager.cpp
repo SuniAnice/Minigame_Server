@@ -96,7 +96,7 @@ void LobbyManager::ThreadFunc()
 						{
 							auto t = m_users[ *id ];
 							m_users.erase( *id );
-							delete t;
+							if (t != nullptr) delete t;
 							break;
 						}
 						else
