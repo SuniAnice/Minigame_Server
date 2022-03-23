@@ -80,6 +80,8 @@ void MainServer::_Init()
 	GameManager::GetInstance();
 	TimerManager::GetInstance();
 	DBManager::GetInstance();
+
+	srand( time( NULL ) );
 }
 
 void MainServer::Run()
