@@ -149,7 +149,7 @@ namespace Lobby
 	struct DBInfoLoadedTask
 	{
 		Session* m_session;
-		std::wstring m_nickname;
+		wchar_t m_nickname[ 10 ] = {};
 		int m_score;
 	};
 
