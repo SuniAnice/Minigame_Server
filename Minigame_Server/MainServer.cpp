@@ -1,6 +1,7 @@
 
 
 #include "AutoCall.hpp"
+#include "DBManager.h"
 #include "GameManager.h"
 #include "MainServer.h"
 #include "MatchMaker.h"
@@ -78,6 +79,7 @@ void MainServer::_Init()
 	MatchMaker::GetInstance();
 	GameManager::GetInstance();
 	TimerManager::GetInstance();
+	DBManager::GetInstance();
 }
 
 void MainServer::Run()

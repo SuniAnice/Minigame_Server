@@ -72,6 +72,7 @@ void DBManager::ThreadFunc()
 									{
 										// 태스크에 읽어온 변수 할당하기
 										newt.m_session = t->m_Session;
+										newt.m_nickname = t->m_nickname;
 										newt.m_score = totalScore;
 									}
 									else
@@ -82,6 +83,7 @@ void DBManager::ThreadFunc()
 										{
 											// db에 정보 없음, 가입 처리
 											newt.m_session = t->m_Session;
+											newt.m_nickname = t->m_nickname;
 											newt.m_score = 0;
 											break;
 										}

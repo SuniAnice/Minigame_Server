@@ -1,6 +1,7 @@
 
 
 #include "AutoCall.hpp"
+#include "DBManager.h"
 #include "LobbyManager.h"
 #include "LogUtil.h"
 #include "MainServer.h"
@@ -50,30 +51,7 @@ void LobbyManager::ThreadFunc()
 				if ( !m_usernames.count( t->m_nickname ) && m_usernames.size() < 10 )
 				{
 					m_usernames.insert( t->m_nickname );
-					Packet::ServerToClient::LoginOkPacket okPacket;
-					okPacket.m_index = t->m_id;
-					MainServer::GetInstance().SendPacket( m_users[ t->m_id ], &okPacket );
-					for ( auto& pl : m_users )
-					{
-						if ( pl.second == nullptr )
-						{
-							continue;
-						}
-						// 접속 중인 플레이어들의 정보 전송
-						if ( pl.second->m_nickname.size() != 0 && pl.second->m_nickname != t->m_nickname && pl.second->m_roomIndex == -1 )
-						{
-							Packet::ServerToClient::AddPlayerPacket plpacket;
-							wmemcpy( plpacket.m_nickname, m_users[ pl.first ]->m_nickname.c_str(), m_users[ pl.first ]->m_nickname.size() );
-							MainServer::GetInstance().SendPacket( m_users[ t->m_id ], &plpacket );
-						}
-					}
-					m_users[ t->m_id ]->m_nickname = t->m_nickname;
-					Packet::ServerToClient::AddPlayerPacket packet;
-					wmemcpy( packet.m_nickname, m_users[ t->m_id ]->m_nickname.c_str(), m_users[ t->m_id ]->m_nickname.size() );
-					_BroadCastLobby( &packet );
-					TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + 10s, INGAME::ETaskType::CheckAlive,
-						new INGAME::CheckAliveTask{ m_users[ t->m_id ] } );
-					PRINT_LOG( "유저 로그인 성공" );
+					DBManager::GetInstance().PushTask( DB::ETaskType::LoadInfo, new DB::LoadTask{ m_users[ t->m_id ], t->m_nickname } );
 				}
 				else
 				{
@@ -146,6 +124,7 @@ void LobbyManager::ThreadFunc()
 				Base::AutoCall defer( [&t]() { delete t; } );
 				t->m_session->m_roomIndex = -1;
 				t->m_session->m_totalScore += t->m_score;
+				DBManager::GetInstance().PushTask( DB::ETaskType::SaveInfo, new DB::SaveTask{ t->m_session, t->m_score } );
 			}
 		}
 		break;
@@ -183,6 +162,39 @@ void LobbyManager::ThreadFunc()
 						MainServer::GetInstance().SendPacket( t->m_session, &plpacket );
 					}
 				}
+			}
+		}
+		break;
+		case Lobby::ETaskType::DBInfoLoaded:
+		{
+			Lobby::DBInfoLoadedTask* t = reinterpret_cast< Lobby::DBInfoLoadedTask* >( task.second );
+			if ( t->m_session != nullptr )
+			{
+				t->m_session->m_totalScore = t->m_score;
+				t->m_session->m_nickname = t->m_nickname;
+				Packet::ServerToClient::LoginOkPacket okPacket;
+				okPacket.m_index = t->m_session->m_key;
+				MainServer::GetInstance().SendPacket( m_users[ t->m_session->m_key ], &okPacket );
+				for ( auto& pl : m_users )
+				{
+					if ( pl.second == nullptr )
+					{
+						continue;
+					}
+					// 접속 중인 플레이어들의 정보 전송
+					if ( pl.second->m_nickname.size() != 0 && pl.second->m_nickname != t->m_nickname && pl.second->m_roomIndex == -1 )
+					{
+						Packet::ServerToClient::AddPlayerPacket plpacket;
+						wmemcpy( plpacket.m_nickname, m_users[ pl.first ]->m_nickname.c_str(), m_users[ pl.first ]->m_nickname.size() );
+						MainServer::GetInstance().SendPacket( m_users[ t->m_session->m_key ], &plpacket );
+					}
+				}
+				Packet::ServerToClient::AddPlayerPacket packet;
+				wmemcpy( packet.m_nickname, m_users[ t->m_session->m_key ]->m_nickname.c_str(), m_users[ t->m_session->m_key ]->m_nickname.size() );
+				_BroadCastLobby( &packet );
+				TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + 10s, INGAME::ETaskType::CheckAlive,
+					new INGAME::CheckAliveTask{ m_users[ t->m_session->m_key ] } );
+				PRINT_LOG( "유저 로그인 성공" );
 			}
 		}
 		break;

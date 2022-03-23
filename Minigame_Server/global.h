@@ -149,6 +149,7 @@ namespace Lobby
 	struct DBInfoLoadedTask
 	{
 		Session* m_session;
+		std::wstring m_nickname;
 		int m_score;
 	};
 
@@ -277,7 +278,7 @@ namespace DB
 	struct LoadTask
 	{
 		Session* m_Session;
-		int m_score;
+		std::wstring m_nickname;
 	};
 
 	struct SaveTask
