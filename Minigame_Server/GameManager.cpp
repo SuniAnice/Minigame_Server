@@ -371,6 +371,13 @@ void GameManager::ThreadFunc()
 						}
 						PRINT_LOG( "라운드 결과 - 사물 승리" );
 					}
+					int count = 0;
+					for ( auto& pl : t->m_room->m_userInfo )
+					{
+						packet.m_userNum[ count ] = pl.first;
+						packet.m_userScore[ count ] = pl.second.m_score;
+						count++;
+					}
 
 					_BroadCastPacket( t->m_room, &packet );
 

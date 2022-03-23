@@ -28,11 +28,11 @@ void LobbyManager::ThreadFunc()
 		{
 		case Lobby::ETaskType::UserAccept:
 		{
-			OverlappedExtended* over = reinterpret_cast<OverlappedExtended*>( task.second );
+			OverlappedExtended* over = reinterpret_cast< OverlappedExtended* >( task.second );
 			if ( over != nullptr )
 			{
 				int id = _GetNewId( over->m_socket );
-				CreateIoCompletionPort( reinterpret_cast<HANDLE>( over->m_socket ), m_handle, id, 0 );
+				CreateIoCompletionPort( reinterpret_cast< HANDLE >( over->m_socket ), m_handle, id, 0 );
 				m_users[ id ]->m_overlapped = *over;
 				m_users[ id ]->m_overlapped.m_opType = EOpType::Recv;
 				m_users[ id ]->m_prevSize = 0;
@@ -86,7 +86,7 @@ void LobbyManager::ThreadFunc()
 			break;
 		case Lobby::ETaskType::LobbyChat:
 		{
-			Lobby::ChatTask* t = reinterpret_cast<Lobby::ChatTask*>( task.second );
+			Lobby::ChatTask* t = reinterpret_cast< Lobby::ChatTask* >( task.second );
 			if ( t != nullptr )
 			{
 				Base::AutoCall defer( [&t]() { delete t; } );
@@ -99,7 +99,7 @@ void LobbyManager::ThreadFunc()
 		break;
 		case Lobby::ETaskType::UserLogout:
 		{
-			int* id = reinterpret_cast<int*>( task.second );
+			int* id = reinterpret_cast< int* >( task.second );
 			if ( m_users.count( *id ) )
 			{
 				std::cout << *id << "번 플레이어 로그아웃" << std::endl;
@@ -140,7 +140,7 @@ void LobbyManager::ThreadFunc()
 		break;
 		case Lobby::ETaskType::EnterLobby:
 		{
-			Lobby::EnterLobbyTask* t = reinterpret_cast<Lobby::EnterLobbyTask*>( task.second );
+			Lobby::EnterLobbyTask* t = reinterpret_cast< Lobby::EnterLobbyTask* >( task.second );
 			if ( t->m_session != nullptr )
 			{
 				Base::AutoCall defer( [&t]() { delete t; } );

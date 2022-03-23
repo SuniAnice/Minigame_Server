@@ -449,6 +449,8 @@ namespace Packet
 			unsigned char m_size = sizeof( GameResultPacket );
 			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::GameResult;
 			bool m_isSeekerWin = false;
+			int m_userNum[ MAX_PLAYER_IN_ROOM ] = {};
+			int m_userScore[ MAX_PLAYER_IN_ROOM ] = {};
 		};
 
 		struct RandomEventPacket
