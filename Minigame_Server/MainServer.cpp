@@ -188,8 +188,7 @@ void MainServer::_WorkerFunc()
 		default:
 		{
 			PRINT_LOG( "잘못된 Operation Type입니다");
-			// 로그아웃 처리
-			LobbyManager::GetInstance().PushTask( Lobby::ETaskType::UserLogout, &key );
+			ZeroMemory( overEx->m_packetBuffer, BUFFER_SIZE );
 			continue;
 		}
 			break;
@@ -199,6 +198,7 @@ void MainServer::_WorkerFunc()
 
 int MainServer::SendPacket( Session* target, void* p )
 {
+	if ( target == nullptr ) return -1;
 	int p_size = reinterpret_cast< unsigned char* >( p )[ 0 ];
 	OverlappedExtended* m_overlapped = new OverlappedExtended;
 	m_overlapped->m_opType = EOpType::Send;
@@ -209,7 +209,7 @@ int MainServer::SendPacket( Session* target, void* p )
 
 	int ret = WSASend( target->m_socket, &( m_overlapped->m_wsaBuf ),
 		1, NULL, 0, &m_overlapped->m_overlapped, NULL );
-	if ( ret == -1 )
+	if ( ret == SOCKET_ERROR )
 	{
 		LobbyManager::GetInstance().PushTask( Lobby::ETaskType::UserLogout, &target->m_key );
 		PRINT_LOG( "send failed : invalid player" );

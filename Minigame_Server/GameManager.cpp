@@ -21,6 +21,7 @@ GameManager::~GameManager()
 
 void GameManager::ThreadFunc()
 {
+	srand( time( NULL ) );
 	std::pair <INGAME::ETaskType, void* > task;
 	while ( true )
 	{

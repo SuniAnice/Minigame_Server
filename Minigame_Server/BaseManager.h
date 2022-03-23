@@ -18,7 +18,6 @@ public:
 			{
 				this->ThreadFunc();
 			} );
-		srand( time( NULL ) );
 	}
 	virtual ~BaseManager()
 	{

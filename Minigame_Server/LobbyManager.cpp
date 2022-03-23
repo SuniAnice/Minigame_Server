@@ -81,7 +81,6 @@ void LobbyManager::ThreadFunc()
 			if ( m_users.count( *id ) )
 			{
 				std::cout << *id << "번 플레이어 로그아웃" << std::endl;
-
 				// 닉네임을 설정한 사람이면
 				if ( m_users[ *id ]->m_nickname.size() )
 				{
@@ -214,17 +213,11 @@ Session* LobbyManager::GetSession( const int id )
 
 int LobbyManager::_GetNewId( const SOCKET& m_socket )
 {
-	for ( int i = 1; i < MAX_USER; ++i )
-	{
-		if ( !m_users.count( i ) )
-		{
-			m_users[ i ] = new Session();
-			m_users[ i ]->m_key = i;
-			m_users[ i ]->m_socket = m_socket;
-			return i;
-		}
-	}
-	return -1;
+	m_newUserNum++;
+	m_users[ m_newUserNum ] = new Session();
+	m_users[ m_newUserNum ]->m_key = m_newUserNum;
+	m_users[ m_newUserNum ]->m_socket = m_socket;
+	return m_newUserNum;
 }
 
 void LobbyManager::_BroadCastLobby( void* packet )
@@ -233,7 +226,6 @@ void LobbyManager::_BroadCastLobby( void* packet )
 	{
 		if ( it->second == nullptr )
 		{
-			it = m_users.erase( it );
 			continue;
 		}
 		if ( it->second->m_nickname.size() && it->second->m_roomIndex == -1 )
