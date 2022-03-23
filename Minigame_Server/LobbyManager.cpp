@@ -77,41 +77,41 @@ void LobbyManager::ThreadFunc()
 		break;
 		case Lobby::ETaskType::UserLogout:
 		{
-			int* id = reinterpret_cast< int* >( task.second );
-			if ( m_users.count( *id ) )
+			int id = *reinterpret_cast< int* >( task.second );
+			if ( m_users.count( id ) )
 			{
-				std::cout << *id << "번 플레이어 로그아웃" << std::endl;
+				std::cout << id << "번 플레이어 로그아웃" << std::endl;
 				// 닉네임을 설정한 사람이면
-				if ( m_users[ *id ]->m_nickname.size() )
+				if ( m_users[ id ]->m_nickname.size() )
 				{
-					m_usernames.erase( m_users[ *id ]->m_nickname );
-					if ( m_users[ *id ]->m_roomIndex == -1 )
+					m_usernames.erase( m_users[ id ]->m_nickname );
+					if ( m_users[ id ]->m_roomIndex == -1 )
 					{
 						Packet::ServerToClient::RemovePlayerPacket packet;
-						wmemcpy( packet.m_nickname, m_users[ *id ]->m_nickname.c_str(), m_users[ *id ]->m_nickname.size() );
+						wmemcpy( packet.m_nickname, m_users[ id ]->m_nickname.c_str(), m_users[ id ]->m_nickname.size() );
 						_BroadCastLobby( &packet );
 						// 매칭을 돌리지 않았으면 바로 제거 가능
-						if ( !m_users[ *id ]->m_isMatching )
+						if ( !m_users[ id ]->m_isMatching )
 						{
-							auto t = m_users[ *id ];
-							m_users.erase( *id );
+							auto t = m_users[ id ];
+							m_users.erase( id );
 							if (t != nullptr) delete t;
 							break;
 						}
 						else
 						{
 							// 매칭중이면 객체 삭제를 매치메이커에 위임
-							MatchMaker::GetInstance().PushTask( Match::ETaskType::UserRemove, new Match::RemovePlayerTask{ m_users[ *id ] } );
+							MatchMaker::GetInstance().PushTask( Match::ETaskType::UserRemove, new Match::RemovePlayerTask{ m_users[ id ] } );
 						}
 					}
 					else
 					{
 						// 게임에 있다면 객체 삭제를 게임매니저에 위임
 						GameManager::GetInstance().PushTask( INGAME::ETaskType::RemovePlayer,
-							new INGAME::RemovePlayerTask{ m_users[ *id ]->m_roomIndex, *id , m_users[ *id ] } );
+							new INGAME::RemovePlayerTask{ m_users[ id ]->m_roomIndex, id , m_users[ id ] } );
 					}
 				}
-				m_users.erase( *id );
+				m_users.erase( id );
 			}
 		}
 		break;
@@ -226,6 +226,7 @@ void LobbyManager::_BroadCastLobby( void* packet )
 	{
 		if ( it->second == nullptr )
 		{
+			//it = m_users.erase( it );
 			continue;
 		}
 		if ( it->second->m_nickname.size() && it->second->m_roomIndex == -1 )
