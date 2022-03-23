@@ -433,6 +433,8 @@ namespace Packet
 		{
 			unsigned char m_size = sizeof( GameEndPacket );
 			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::GameEnd;
+			int m_userNum[ MAX_PLAYER_IN_ROOM ] = {};
+			int m_userScore[ MAX_PLAYER_IN_ROOM ] = {};
 		};
 
 		struct SetPositionPacket
@@ -449,8 +451,7 @@ namespace Packet
 			unsigned char m_size = sizeof( GameResultPacket );
 			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::GameResult;
 			bool m_isSeekerWin = false;
-			int m_userNum[ MAX_PLAYER_IN_ROOM ] = {};
-			int m_userScore[ MAX_PLAYER_IN_ROOM ] = {};
+			int m_firstUser = 0;
 		};
 
 		struct RandomEventPacket
