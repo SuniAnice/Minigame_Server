@@ -147,8 +147,8 @@ void GameManager::ThreadFunc()
 				// 다른 사유로 라운드가 종료되지 않았다면
 				if ( t->m_currentRound == t->m_room->m_currentRound )
 				{
-					// 설정된 라운드가 끝나지 않았다면
-					if ( t->m_room->m_currentRound < MAX_ROUND )
+					// 설정된 라운드가 끝나지 않았고, 2명 이상 남은 경우
+					if ( t->m_room->m_currentRound < MAX_ROUND && t->m_room->m_userInfo.size() >= 2 )
 					{
 						t->m_room->m_currentRound++;
 
