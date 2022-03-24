@@ -60,9 +60,8 @@ void DBManager::ThreadFunc()
 							SQLINTEGER totalScore = 0;
 							if ( retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO ) {
 
-								retcode = SQLBindCol( hstmt, 2, SQL_C_ULONG, &totalScore, 10, &cbTotalScore );
+								retcode = SQLBindCol( hstmt, 1, SQL_C_ULONG, &totalScore, 10, &cbTotalScore );
 
-								retcode = SQLFetch( hstmt );
 								Lobby::DBInfoLoadedTask newt;
 
 								for ( int i = 0; ; i++ ) {
