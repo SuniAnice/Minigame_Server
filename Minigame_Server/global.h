@@ -355,9 +355,10 @@ namespace Packet
 
 		struct AddPlayerPacket
 		{
-			unsigned char sm_sizeize = sizeof( AddPlayerPacket );
+			unsigned char m_size = sizeof( AddPlayerPacket );
 			PacketInfo::EServerToClient m_type = PacketInfo::EServerToClient::AddPlayer;
 			wchar_t m_nickname[ 10 ] = {};
+			int m_totalScore = 0;
 		};
 
 		struct RemovePlayerPacket

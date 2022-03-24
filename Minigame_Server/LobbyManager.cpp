@@ -150,6 +150,7 @@ void LobbyManager::ThreadFunc()
 				Base::AutoCall defer( [&t]() { delete t; } );
 				Packet::ServerToClient::AddPlayerPacket packet;
 				wmemcpy( packet.m_nickname, t->m_session->m_nickname.c_str(), t->m_session->m_nickname.size() );
+				packet.m_totalScore = t->m_session->m_totalScore;
 				_BroadCastLobby( &packet );
 				for ( auto& pl : m_users )
 				{
@@ -158,6 +159,7 @@ void LobbyManager::ThreadFunc()
 					{
 						Packet::ServerToClient::AddPlayerPacket plpacket;
 						wmemcpy( plpacket.m_nickname, m_users[ pl.first ]->m_nickname.c_str(), m_users[ pl.first ]->m_nickname.size() );
+						plpacket.m_totalScore = pl.second->m_totalScore;
 						MainServer::GetInstance().SendPacket( t->m_session, &plpacket );
 					}
 				}
@@ -185,11 +187,13 @@ void LobbyManager::ThreadFunc()
 					{
 						Packet::ServerToClient::AddPlayerPacket plpacket;
 						wmemcpy( plpacket.m_nickname, m_users[ pl.first ]->m_nickname.c_str(), m_users[ pl.first ]->m_nickname.size() );
+						plpacket.m_totalScore = pl.second->m_totalScore;
 						MainServer::GetInstance().SendPacket( m_users[ t->m_session->m_key ], &plpacket );
 					}
 				}
 				Packet::ServerToClient::AddPlayerPacket packet;
 				wmemcpy( packet.m_nickname, m_users[ t->m_session->m_key ]->m_nickname.c_str(), m_users[ t->m_session->m_key ]->m_nickname.size() );
+				packet.m_totalScore = t->m_score;
 				_BroadCastLobby( &packet );
 				TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + 10s, INGAME::ETaskType::CheckAlive,
 					new INGAME::CheckAliveTask{ m_users[ t->m_session->m_key ] } );
