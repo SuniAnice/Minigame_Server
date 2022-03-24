@@ -104,6 +104,8 @@ void LobbyManager::ThreadFunc()
 						{
 							// 매칭중이면 객체 삭제를 매치메이커에 위임
 							MatchMaker::GetInstance().PushTask( Match::ETaskType::UserRemove, new Match::RemovePlayerTask{ m_users[ id ] } );
+							m_users.erase( id );
+							break;
 						}
 					}
 					else
@@ -111,8 +113,11 @@ void LobbyManager::ThreadFunc()
 						// 게임에 있다면 객체 삭제를 게임매니저에 위임
 						GameManager::GetInstance().PushTask( INGAME::ETaskType::RemovePlayer,
 							new INGAME::RemovePlayerTask{ m_users[ id ]->m_roomIndex, id , m_users[ id ] } );
+						m_users.erase( id );
+						break;
 					}
 				}
+				if ( m_users[ id ] != nullptr ) delete m_users[ id ];
 				m_users.erase( id );
 			}
 		}
