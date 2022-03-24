@@ -39,6 +39,8 @@ void LobbyManager::ThreadFunc()
 				m_users[ id ]->m_prevSize = 0;
 				PRINT_LOG( "플레이어 Accept 성공" );
 				MainServer::GetInstance().DoRecv( m_users[ id ] );
+				TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + 10s, INGAME::ETaskType::CheckAlive,
+					new INGAME::CheckAliveTask{ m_users[ id ] } );
 			}
 		}
 		break;
@@ -195,8 +197,6 @@ void LobbyManager::ThreadFunc()
 				wmemcpy( packet.m_nickname, m_users[ t->m_session->m_key ]->m_nickname.c_str(), m_users[ t->m_session->m_key ]->m_nickname.size() );
 				packet.m_totalScore = t->m_score;
 				_BroadCastLobby( &packet );
-				TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + 10s, INGAME::ETaskType::CheckAlive,
-					new INGAME::CheckAliveTask{ m_users[ t->m_session->m_key ] } );
 				PRINT_LOG( "유저 로그인 성공" );
 			}
 		}
