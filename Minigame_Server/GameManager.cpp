@@ -348,7 +348,7 @@ void GameManager::ThreadFunc()
 							if ( m_rooms[ t->m_roomindex ]->m_aliveHider <= 0 )
 							{
 								TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + 3s, INGAME::ETaskType::RoundResult,
-									new INGAME::RoundResultTask{ m_rooms[ t->m_roomindex ], m_rooms[ t->m_roomindex ]->m_currentRound, false } );
+									new INGAME::RoundResultTask{ m_rooms[ t->m_roomindex ], m_rooms[ t->m_roomindex ]->m_currentRound, true } );
 							}
 						}
 						// 생존중이 아닌 사물일 경우, 아무 처리도 하지 않는다.
