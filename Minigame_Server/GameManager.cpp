@@ -21,6 +21,7 @@ GameManager::~GameManager()
 
 void GameManager::ThreadFunc()
 {
+	srand( time( NULL ) );
 	std::pair <INGAME::ETaskType, void* > task;
 	while ( true )
 	{
@@ -146,8 +147,8 @@ void GameManager::ThreadFunc()
 				// 다른 사유로 라운드가 종료되지 않았다면
 				if ( t->m_currentRound == t->m_room->m_currentRound )
 				{
-					// 설정된 라운드가 끝나지 않았다면
-					if ( t->m_room->m_currentRound < MAX_ROUND )
+					// 설정된 라운드가 끝나지 않았고, 2명 이상 남은 경우
+					if ( t->m_room->m_currentRound < MAX_ROUND && t->m_room->m_userInfo.size() >= 2 )
 					{
 						t->m_room->m_currentRound++;
 
@@ -330,6 +331,29 @@ void GameManager::ThreadFunc()
 				Base::AutoCall defer( [&t]() { delete t; } );
 				if ( t->m_session->m_roomIndex != -1 )
 				{
+					if ( !m_rooms[ t->m_roomindex ]->m_gameEnded )
+					{
+						// 라운드중 플레이어가 나간 경우만 처리한다
+						if ( m_rooms[ t->m_roomindex ]->m_currentSeeker == t->m_index )
+						{
+							// 술래일 경우
+							// 새로운 라운드 시작
+							TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + 3s, INGAME::ETaskType::RoundResult,
+								new INGAME::RoundResultTask{ m_rooms[ t->m_roomindex ], m_rooms[ t->m_roomindex ]->m_currentRound, false } );
+						}
+						else if ( m_rooms[ t->m_roomindex ]->m_userInfo[ t->m_index ].m_isAlive )
+						{
+							// 생존중인 사물일 경우
+							m_rooms[ t->m_roomindex ]->m_aliveHider -= 1;
+							if ( m_rooms[ t->m_roomindex ]->m_aliveHider <= 0 )
+							{
+								TimerManager::GetInstance().PushTask( std::chrono::steady_clock::now() + 3s, INGAME::ETaskType::RoundResult,
+									new INGAME::RoundResultTask{ m_rooms[ t->m_roomindex ], m_rooms[ t->m_roomindex ]->m_currentRound, true } );
+							}
+						}
+						// 생존중이 아닌 사물일 경우, 아무 처리도 하지 않는다.
+					}
+
 					m_rooms[ t->m_roomindex ]->m_userInfo.erase( t->m_index );
 					m_rooms[ t->m_roomindex ]->m_userSessions.erase( std::remove( m_rooms[ t->m_roomindex ]->m_userSessions.begin(),
 						m_rooms[ t->m_roomindex ]->m_userSessions.end(), t->m_session ) );
@@ -404,7 +428,7 @@ void GameManager::ThreadFunc()
 			{
 				Base::AutoCall defer( [&t]() { delete t; } );
 				// 다른 사유로 라운드가 종료되지 않았다면
-				if ( t->m_currentRound == t->m_room->m_currentRound )
+				if ( t->m_currentRound == t->m_room->m_currentRound && !t->m_room->m_gameEnded )
 				{
 					switch ( t->m_eventcount )
 					{

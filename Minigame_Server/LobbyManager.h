@@ -26,6 +26,8 @@ private:
 
 	HANDLE m_handle;
 
+	int m_newUserNum = 0;
+
 	int _GetNewId(const SOCKET& m_socket);
 
 	void _BroadCastLobby( void* packet );
